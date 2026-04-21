@@ -127,28 +127,33 @@ export default function TrackPage() {
           </p>
         </div>
 
-        <div className="flex gap-2 mb-8">
-          <Input
-            value={trackingId}
-            onChange={(e) => {
-              setTrackingId(e.target.value.toUpperCase());
-              setError(null);
-            }}
-            placeholder="SS-2026-XXXX"
-            className="font-mono text-center text-lg h-12"
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            disabled={loading}
-          />
+        <div className="flex gap-3 mb-8">
+          <div className="relative flex-1 group">
+            <div className="absolute -inset-px rounded-xl bg-linear-to-r from-primary/40 via-primary/20 to-primary/40 opacity-60 group-focus-within:opacity-100 blur-[2px] transition-opacity" />
+            <Input
+              value={trackingId}
+              onChange={(e) => {
+                setTrackingId(e.target.value.toUpperCase());
+                setError(null);
+              }}
+              placeholder="SS-2026-XXXX"
+              className="relative font-mono text-center text-lg h-14 rounded-xl border-primary/30 bg-background focus:border-primary focus:ring-primary/20"
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              disabled={loading}
+            />
+          </div>
           <Button
             onClick={handleSearch}
-            size="lg"
-            className="shrink-0 px-6"
+            className="shrink-0 px-8 h-14 rounded-xl text-base font-semibold shadow-[0_0_15px_rgba(120,200,140,0.25)] hover:shadow-[0_0_25px_rgba(120,200,140,0.4)] transition-shadow"
             disabled={loading || !trackingId.trim()}
           >
             {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              "Track"
+              <>
+                <Search className="h-4 w-4 mr-2" />
+                Track
+              </>
             )}
           </Button>
         </div>
@@ -176,7 +181,7 @@ export default function TrackPage() {
               exit={{ opacity: 0, y: 12 }}
               transition={{ type: "spring", duration: 0.5, bounce: 0.15 }}
             >
-              <Card>
+              <Card className="border-primary/20 shadow-[0_0_20px_rgba(120,200,140,0.1)]">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between mb-6">
                     <div>
