@@ -10,10 +10,12 @@ from app.api.deps import get_current_user
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
+from app.models.audit_log import AuditAction
 from app.models.evidence import Evidence
 from app.models.report import Report
 from app.schemas.evidence import EvidenceItem
 from app.schemas.report import ApiResponse
+from app.services.audit import log_action
 
 router = APIRouter(prefix="/api/v1/reports/{report_id}/evidence", tags=["Evidence"])
 
@@ -61,23 +63,19 @@ async def upload_evidence(
 ) -> ApiResponse:
     report = await _get_report(report_id, db)
 
-    # Validate file type
     if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=400, detail=f"File type {file.content_type} not allowed")
 
-    # Read file content
     content = await file.read()
     size = len(content)
     if size > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File exceeds 100 MB limit")
 
-    # Upload to GCS
     file_id = uuid.uuid4()
     file_key = f"evidence/{report_id}/{file_id}/{file.filename}"
     blob = _bucket().blob(file_key)
     blob.upload_from_string(content, content_type=file.content_type)
 
-    # Save metadata to DB
     evidence = Evidence(
         report_id=report_id,
         file_name=file.filename or "unnamed",
@@ -88,6 +86,12 @@ async def upload_evidence(
     )
     db.add(evidence)
     report.evidence_count += 1
+    await db.flush()
+
+    await log_action(
+        db, AuditAction.EVIDENCE_UPLOADED, "evidence", str(evidence.id),
+        metadata={"report_id": str(report_id), "file_name": evidence.file_name, "size": size},
+    )
     await db.commit()
     await db.refresh(evidence)
 
@@ -157,7 +161,7 @@ async def delete_evidence(
     report_id: uuid.UUID,
     evidence_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _user: AdminUser = Depends(get_current_user),
+    user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
     report = await _get_report(report_id, db)
 
@@ -174,6 +178,10 @@ async def delete_evidence(
 
     evidence.is_deleted = True
     report.evidence_count = max(0, report.evidence_count - 1)
+    await log_action(
+        db, AuditAction.EVIDENCE_DELETED, "evidence", str(evidence_id),
+        actor=user, metadata={"report_id": str(report_id), "file_name": evidence.file_name},
+    )
     await db.commit()
 
     return ApiResponse(data={"message": "Evidence deleted"})

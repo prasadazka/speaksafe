@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import text
 
+from app.api.v1.audit import router as audit_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.evidence import router as evidence_router
 from app.api.v1.notes import router as notes_router
@@ -30,6 +31,7 @@ app.include_router(auth_router)
 app.include_router(reports_router)
 app.include_router(evidence_router)
 app.include_router(notes_router)
+app.include_router(audit_router)
 
 
 @app.get("/health")

@@ -8,8 +8,10 @@ from app.api.deps import get_current_user
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
+from app.models.audit_log import AuditAction
 from app.schemas.auth import AdminLogin, AdminProfile, AdminRegister, TokenResponse
 from app.schemas.report import ApiResponse
+from app.services.audit import log_action
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
@@ -20,7 +22,6 @@ async def register(
     payload: AdminRegister,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    # Check duplicate email
     existing = await db.execute(select(AdminUser).where(AdminUser.email == payload.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Email already registered")
@@ -32,6 +33,12 @@ async def register(
         role=payload.role,
     )
     db.add(user)
+    await db.flush()
+
+    await log_action(
+        db, AuditAction.ADMIN_REGISTERED, "admin_user", str(user.id),
+        metadata={"email": payload.email, "role": payload.role.value},
+    )
     await db.commit()
     await db.refresh(user)
 
@@ -55,8 +62,10 @@ async def login(
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # Update last login
     user.last_login_at = datetime.now(timezone.utc)
+    await log_action(
+        db, AuditAction.ADMIN_LOGIN, "admin_user", str(user.id), actor=user,
+    )
     await db.commit()
 
     token = create_access_token(user.id)

@@ -7,10 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
+from app.models.audit_log import AuditAction
 from app.models.case_note import CaseNote
 from app.models.report import Report
 from app.schemas.case_note import NoteCreate, NoteItem
 from app.schemas.report import ApiResponse
+from app.services.audit import log_action
 
 router = APIRouter(prefix="/api/v1/reports/{report_id}/notes", tags=["Case Notes"])
 
@@ -43,6 +45,12 @@ async def add_note(
     )
     db.add(note)
     report.notes_count += 1
+    await db.flush()
+
+    await log_action(
+        db, AuditAction.NOTE_ADDED, "case_note", str(note.id),
+        actor=user, metadata={"report_id": str(report_id)},
+    )
     await db.commit()
     await db.refresh(note)
 

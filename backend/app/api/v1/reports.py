@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
+from app.models.audit_log import AuditAction
 from app.models.report import Report, ReportCategory, ReportStatus, Severity
 from app.schemas.report import (
     ApiResponse,
@@ -18,6 +19,7 @@ from app.schemas.report import (
     ReportStatusUpdate,
     ReportSubmitted,
 )
+from app.services.audit import log_action
 
 router = APIRouter(prefix="/api/v1/reports", tags=["Reports"])
 
@@ -34,6 +36,12 @@ async def submit_report(
         description=payload.description,
     )
     db.add(report)
+    await db.flush()
+
+    await log_action(
+        db, AuditAction.REPORT_CREATED, "report", str(report.id),
+        metadata={"tracking_id": report.tracking_id, "category": payload.category.value},
+    )
     await db.commit()
     await db.refresh(report)
 
@@ -129,7 +137,7 @@ async def update_status(
     report_id: uuid.UUID,
     payload: ReportStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    _user: AdminUser = Depends(get_current_user),
+    user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
     result = await db.execute(
         select(Report).where(Report.id == report_id, Report.is_deleted.is_(False))
@@ -138,7 +146,13 @@ async def update_status(
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
 
+    old_status = report.status.value
     report.status = payload.status
+
+    await log_action(
+        db, AuditAction.REPORT_STATUS_UPDATED, "report", str(report_id),
+        actor=user, metadata={"old": old_status, "new": payload.status.value},
+    )
     await db.commit()
     await db.refresh(report)
 
@@ -153,7 +167,7 @@ async def update_severity(
     report_id: uuid.UUID,
     payload: ReportSeverityUpdate,
     db: AsyncSession = Depends(get_db),
-    _user: AdminUser = Depends(get_current_user),
+    user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
     result = await db.execute(
         select(Report).where(Report.id == report_id, Report.is_deleted.is_(False))
@@ -162,7 +176,13 @@ async def update_severity(
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
 
+    old_severity = report.severity.value
     report.severity = payload.severity
+
+    await log_action(
+        db, AuditAction.REPORT_SEVERITY_UPDATED, "report", str(report_id),
+        actor=user, metadata={"old": old_severity, "new": payload.severity.value},
+    )
     await db.commit()
     await db.refresh(report)
 
@@ -176,7 +196,7 @@ async def update_severity(
 async def delete_report(
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _user: AdminUser = Depends(get_current_user),
+    user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
     result = await db.execute(
         select(Report).where(Report.id == report_id, Report.is_deleted.is_(False))
@@ -186,6 +206,9 @@ async def delete_report(
         raise HTTPException(status_code=404, detail="Report not found")
 
     report.is_deleted = True
+    await log_action(
+        db, AuditAction.REPORT_DELETED, "report", str(report_id), actor=user,
+    )
     await db.commit()
 
     return ApiResponse(data={"message": "Report deleted"})
