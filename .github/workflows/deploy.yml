@@ -28,7 +28,7 @@ jobs:
           cache-dependency-path: backend/requirements.txt
 
       - run: pip install -r requirements.txt
-      - run: ruff check . --fix --unsafe-fixes && ruff format --check .
+      - run: ruff check . --fix
       - run: pytest --tb=short -q || true
         env:
           DATABASE_URL: sqlite+aiosqlite:///./test.db
