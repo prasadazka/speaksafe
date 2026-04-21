@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const ai = new GoogleGenAI({
       vertexai: true,
       project: process.env.GOOGLE_CLOUD_PROJECT ?? "wbtool-494011",
-      location: process.env.GOOGLE_CLOUD_LOCATION ?? "us-central1",
+      location: process.env.VERTEX_AI_LOCATION ?? "us-central1",
     });
 
     const response = await ai.models.generateContent({
