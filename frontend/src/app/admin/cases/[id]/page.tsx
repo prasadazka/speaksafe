@@ -1,115 +1,379 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import {
-  Shield, ArrowLeft, FileText, MessageSquare, Paperclip,
-  Clock, AlertTriangle, User, Send,
+  Shield,
+  ArrowLeft,
+  FileText,
+  MessageSquare,
+  Paperclip,
+  Clock,
+  AlertTriangle,
+  Send,
+  Loader2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/auth-context";
+import {
+  getReport,
+  getNotes,
+  addNote,
+  updateReportStatus,
+  updateReportSeverity,
+  deleteReport,
+  type ReportDetail,
+  type NoteItem,
+  type ReportStatus,
+  type Severity,
+} from "@/lib/admin-api";
 
-const report = {
-  id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  trackingId: "SS-2026-4821",
-  category: "FRAUD",
-  severity: "CRITICAL",
-  status: "INVESTIGATING",
-  description:
-    "Financial irregularities discovered in Q1 procurement contracts. Multiple vendors appear to be shell companies linked to senior management. Invoices totaling approximately $2.3M have been flagged with duplicate payment patterns. The procurement system shows approval overrides bypassing standard dual-authorization controls.",
-  evidenceCount: 5,
-  notesCount: 12,
-  createdAt: "2026-04-18T09:15:00Z",
-  updatedAt: "2026-04-21T14:30:00Z",
+const severityColor: Record<string, string> = {
+  LOW: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  MEDIUM: "bg-amber-100 text-amber-700 border-amber-200",
+  HIGH: "bg-orange-100 text-orange-700 border-orange-200",
+  CRITICAL: "bg-red-100 text-red-700 border-red-200",
 };
 
-const notes = [
-  { id: "1", author: "Admin User", content: "Initial review completed. Flagging for senior compliance review.", createdAt: "2026-04-18T10:00:00Z" },
-  { id: "2", author: "Audit Officer", content: "Contacted finance department for procurement records Q1 2026. Awaiting response.", createdAt: "2026-04-18T14:30:00Z" },
-  { id: "3", author: "Admin User", content: "Vendor cross-reference reveals 3 of 7 flagged vendors share the same registered address. Escalating severity to CRITICAL.", createdAt: "2026-04-19T09:15:00Z" },
-  { id: "4", author: "Audit Officer", content: "External forensic accounting firm engaged. NDA signed. Expected preliminary report within 5 business days.", createdAt: "2026-04-20T11:00:00Z" },
-  { id: "5", author: "Admin User", content: "Board audit committee briefed. Investigation scope expanded to include Q4 2025 contracts.", createdAt: "2026-04-21T14:30:00Z" },
-];
+const statusColor: Record<string, string> = {
+  OPEN: "bg-blue-100 text-blue-700 border-blue-200",
+  UNDER_REVIEW: "bg-amber-100 text-amber-700 border-amber-200",
+  INVESTIGATING: "bg-purple-100 text-purple-700 border-purple-200",
+  CLOSED: "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
 
-const evidence = [
-  { id: "1", fileName: "procurement-invoices-Q1.pdf", mimeType: "application/pdf", sizeBytes: 2456789, createdAt: "2026-04-18T09:15:00Z" },
-  { id: "2", fileName: "vendor-registration-docs.pdf", mimeType: "application/pdf", sizeBytes: 1234567, createdAt: "2026-04-18T09:16:00Z" },
-  { id: "3", fileName: "approval-override-screenshot.png", mimeType: "image/png", sizeBytes: 456789, createdAt: "2026-04-18T09:17:00Z" },
-  { id: "4", fileName: "email-thread-redacted.pdf", mimeType: "application/pdf", sizeBytes: 789012, createdAt: "2026-04-19T08:00:00Z" },
-  { id: "5", fileName: "bank-transfer-records.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", sizeBytes: 345678, createdAt: "2026-04-20T10:30:00Z" },
-];
-
-const timeline = [
-  { action: "Report submitted", actor: "Anonymous", time: "2026-04-18T09:15:00Z" },
-  { action: "Status changed to UNDER_REVIEW", actor: "Admin User", time: "2026-04-18T09:45:00Z" },
-  { action: "Evidence uploaded: 3 files", actor: "Anonymous", time: "2026-04-18T09:17:00Z" },
-  { action: "Severity escalated to CRITICAL", actor: "Admin User", time: "2026-04-19T09:15:00Z" },
-  { action: "Status changed to INVESTIGATING", actor: "Admin User", time: "2026-04-19T09:20:00Z" },
-  { action: "Evidence uploaded: 2 files", actor: "Audit Officer", time: "2026-04-20T10:30:00Z" },
-];
-
-function formatSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1048576).toFixed(1)} MB`;
-}
+const statusLabel: Record<string, string> = {
+  OPEN: "Open",
+  UNDER_REVIEW: "Under Review",
+  INVESTIGATING: "Investigating",
+  CLOSED: "Closed",
+};
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
-    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 export default function CaseDetailPage() {
+  const { user, token, isLoading, hasRole } = useAuth();
+  const router = useRouter();
+  const params = useParams();
+  const reportId = params.id as string;
+
+  const [report, setReport] = useState<ReportDetail | null>(null);
+  const [notes, setNotes] = useState<NoteItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [noteContent, setNoteContent] = useState("");
+  const [addingNote, setAddingNote] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [updatingSeverity, setUpdatingSeverity] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  /* Auth guard */
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/admin/login");
+    }
+  }, [user, isLoading, router]);
+
+  /* Fetch report detail */
+  const fetchReport = useCallback(async () => {
+    if (!token || !reportId) return;
+    setLoading(true);
+    try {
+      const res = await getReport(token, reportId);
+      if (res.success && res.data) {
+        setReport(res.data as ReportDetail);
+      } else {
+        setError("Report not found");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load report");
+    } finally {
+      setLoading(false);
+    }
+  }, [token, reportId]);
+
+  useEffect(() => {
+    fetchReport();
+  }, [fetchReport]);
+
+  /* Fetch notes */
+  const fetchNotes = useCallback(async () => {
+    if (!token || !reportId) return;
+    try {
+      const res = await getNotes(token, reportId);
+      if (res.success && res.data) {
+        setNotes(res.data as NoteItem[]);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [token, reportId]);
+
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
+
+  /* Actions */
+  const handleStatusChange = async (newStatus: ReportStatus) => {
+    if (!token || !reportId) return;
+    setUpdatingStatus(true);
+    try {
+      const res = await updateReportStatus(token, reportId, newStatus);
+      if (res.success && res.data) {
+        setReport(res.data as ReportDetail);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update status");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleSeverityChange = async (newSeverity: Severity) => {
+    if (!token || !reportId) return;
+    setUpdatingSeverity(true);
+    try {
+      const res = await updateReportSeverity(token, reportId, newSeverity);
+      if (res.success && res.data) {
+        setReport(res.data as ReportDetail);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update severity",
+      );
+    } finally {
+      setUpdatingSeverity(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!token || !reportId || !noteContent.trim()) return;
+    setAddingNote(true);
+    try {
+      const res = await addNote(token, reportId, noteContent.trim());
+      if (res.success) {
+        setNoteContent("");
+        await fetchNotes();
+        await fetchReport();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add note");
+    } finally {
+      setAddingNote(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!token || !reportId) return;
+    setDeleting(true);
+    try {
+      await deleteReport(token, reportId);
+      router.push("/admin/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete report");
+      setDeleting(false);
+    }
+  };
+
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-card sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-4 h-14 flex items-center">
+            <Link
+              href="/admin/dashboard"
+              className="flex items-center gap-2"
+            >
+              <Shield className="h-5 w-5 text-primary" />
+              <span className="font-bold tracking-tight">SpeakSafe</span>
+            </Link>
+          </div>
+        </header>
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !report) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-card sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4">
+            <Link
+              href="/admin/dashboard"
+              className="flex items-center gap-2"
+            >
+              <Shield className="h-5 w-5 text-primary" />
+              <span className="font-bold tracking-tight">SpeakSafe</span>
+            </Link>
+          </div>
+        </header>
+        <div className="text-center py-24">
+          <p className="text-destructive mb-4">{error}</p>
+          <Button variant="outline" onClick={() => router.push("/admin/dashboard")}>
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!report) return null;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Top Nav */}
       <header className="border-b border-border bg-card sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/admin/dashboard" className="flex items-center gap-2">
+            <Link
+              href="/admin/dashboard"
+              className="flex items-center gap-2"
+            >
               <Shield className="h-5 w-5 text-primary" />
               <span className="font-bold tracking-tight">SpeakSafe</span>
             </Link>
             <Separator orientation="vertical" className="h-6" />
-            <Link href="/admin/dashboard" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+            <Link
+              href="/admin/dashboard"
+              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+            >
               <ArrowLeft className="h-3.5 w-3.5" /> Back to Dashboard
             </Link>
           </div>
           <Avatar className="h-7 w-7">
-            <AvatarFallback className="text-xs bg-primary text-primary-foreground">AU</AvatarFallback>
+            <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+              {getInitials(user.full_name)}
+            </AvatarFallback>
           </Avatar>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Error banner */}
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+            {error}
+            <button
+              className="ml-2 underline"
+              onClick={() => setError(null)}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* Case Header */}
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-bold font-mono">{report.trackingId}</h1>
-              <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 border">
+              <h1 className="text-2xl font-bold font-mono">
+                {report.tracking_id}
+              </h1>
+              <Badge
+                variant="outline"
+                className={severityColor[report.severity] + " border"}
+              >
                 {report.severity}
               </Badge>
-              <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-200 border">
-                {report.status.replace("_", " ")}
+              <Badge
+                variant="outline"
+                className={statusColor[report.status] + " border"}
+              >
+                {statusLabel[report.status]}
               </Badge>
             </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1"><FileText className="h-3.5 w-3.5" /> {report.category}</span>
-              <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {formatDateTime(report.createdAt)}</span>
-              <span className="flex items-center gap-1"><Paperclip className="h-3.5 w-3.5" /> {report.evidenceCount} files</span>
-              <span className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {report.notesCount} notes</span>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+              <span className="flex items-center gap-1">
+                <FileText className="h-3.5 w-3.5" />{" "}
+                {report.category.replace(/_/g, " ")}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />{" "}
+                {formatDateTime(report.created_at)}
+              </span>
+              <span className="flex items-center gap-1">
+                <Paperclip className="h-3.5 w-3.5" />{" "}
+                {report.evidence_count} files
+              </span>
+              <span className="flex items-center gap-1">
+                <MessageSquare className="h-3.5 w-3.5" />{" "}
+                {report.notes_count} notes
+              </span>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">Change Status</Button>
-            <Button variant="outline" size="sm">Assign</Button>
-          </div>
+          {!hasRole("VIEWER") && (
+            <div className="flex gap-2">
+              <select
+                aria-label="Change status"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={report.status}
+                disabled={updatingStatus}
+                onChange={(e) =>
+                  handleStatusChange(e.target.value as ReportStatus)
+                }
+              >
+                <option value="OPEN">Open</option>
+                <option value="UNDER_REVIEW">Under Review</option>
+                <option value="INVESTIGATING">Investigating</option>
+                <option value="CLOSED">Closed</option>
+              </select>
+              <select
+                aria-label="Change severity"
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={report.severity}
+                disabled={updatingSeverity}
+                onChange={(e) =>
+                  handleSeverityChange(e.target.value as Severity)
+                }
+              >
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="CRITICAL">Critical</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -119,105 +383,131 @@ export default function CaseDetailPage() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-destructive" /> Report Description
+                  <AlertTriangle className="h-4 w-4 text-destructive" /> Report
+                  Description
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm leading-relaxed">{report.description}</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {report.description}
+                </p>
+                {report.location && (
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Location: {report.location}
+                  </p>
+                )}
+                {report.occurred_at && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Occurred:{" "}
+                    {new Date(report.occurred_at).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                )}
               </CardContent>
             </Card>
 
-            {/* Tabs: Notes, Evidence, Timeline */}
+            {/* Tabs: Notes */}
             <Tabs defaultValue="notes">
               <TabsList>
-                <TabsTrigger value="notes">Notes ({notes.length})</TabsTrigger>
-                <TabsTrigger value="evidence">Evidence ({evidence.length})</TabsTrigger>
-                <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                <TabsTrigger value="notes">
+                  Notes ({notes.length})
+                </TabsTrigger>
+                <TabsTrigger value="evidence">
+                  Evidence ({report.evidence_count})
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="notes" className="mt-4 space-y-4">
-                {/* Add note */}
-                <Card>
-                  <CardContent className="pt-4">
-                    <div className="flex gap-3">
-                      <Avatar className="h-8 w-8 shrink-0">
-                        <AvatarFallback className="text-xs bg-primary text-primary-foreground">AU</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <Textarea placeholder="Add a note..." rows={2} className="resize-none mb-2" />
-                        <div className="flex justify-end">
-                          <Button size="sm"><Send className="h-3.5 w-3.5 mr-1.5" /> Add Note</Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Notes list */}
-                {notes.map((note) => (
-                  <Card key={note.id}>
+                {/* Add note — not for VIEWER */}
+                {!hasRole("VIEWER") && (
+                  <Card>
                     <CardContent className="pt-4">
                       <div className="flex gap-3">
                         <Avatar className="h-8 w-8 shrink-0">
-                          <AvatarFallback className="text-xs">{note.author.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+                          <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                            {getInitials(user.full_name)}
+                          </AvatarFallback>
                         </Avatar>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium">{note.author}</span>
-                            <span className="text-xs text-muted-foreground">{formatDateTime(note.createdAt)}</span>
+                        <div className="flex-1">
+                          <Textarea
+                            placeholder="Add a note..."
+                            rows={2}
+                            className="resize-none mb-2"
+                            value={noteContent}
+                            onChange={(e) => setNoteContent(e.target.value)}
+                            disabled={addingNote}
+                          />
+                          <div className="flex justify-end">
+                            <Button
+                              size="sm"
+                              onClick={handleAddNote}
+                              disabled={
+                                addingNote || !noteContent.trim()
+                              }
+                            >
+                              {addingNote ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                              ) : (
+                                <Send className="h-3.5 w-3.5 mr-1.5" />
+                              )}
+                              Add Note
+                            </Button>
                           </div>
-                          <p className="text-sm leading-relaxed text-muted-foreground">{note.content}</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                )}
+
+                {/* Notes list */}
+                {notes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    No notes yet
+                  </p>
+                ) : (
+                  notes.map((note) => (
+                    <Card key={note.id}>
+                      <CardContent className="pt-4">
+                        <div className="flex gap-3">
+                          <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarFallback className="text-xs">
+                              {getInitials(note.author_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium">
+                                {note.author_name}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDateTime(note.created_at)}
+                              </span>
+                            </div>
+                            <p className="text-sm leading-relaxed text-muted-foreground">
+                              {note.content}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </TabsContent>
 
               <TabsContent value="evidence" className="mt-4">
                 <Card>
-                  <CardContent className="p-0">
-                    <div className="divide-y divide-border">
-                      {evidence.map((e) => (
-                        <div key={e.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                              <Paperclip className="h-4 w-4 text-primary" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">{e.fileName}</p>
-                              <p className="text-xs text-muted-foreground">{formatSize(e.sizeBytes)} &middot; {formatDateTime(e.createdAt)}</p>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="sm">Download</Button>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="timeline" className="mt-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      {timeline.map((event, i) => (
-                        <div key={i} className="flex gap-3">
-                          <div className="flex flex-col items-center">
-                            <div className="h-2.5 w-2.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                            {i < timeline.length - 1 && <div className="w-px h-full bg-border mt-1" />}
-                          </div>
-                          <div className="pb-4">
-                            <p className="text-sm font-medium">{event.action}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              <span className="flex items-center gap-1">
-                                <User className="h-3 w-3" /> {event.actor} &middot; {formatDateTime(event.time)}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                    {report.evidence_count > 0 ? (
+                      <p>
+                        {report.evidence_count} evidence file(s) attached.
+                        Evidence viewer coming soon.
+                      </p>
+                    ) : (
+                      <p>No evidence files attached to this report.</p>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -232,44 +522,153 @@ export default function CaseDetailPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { label: "Tracking ID", value: report.trackingId },
-                  { label: "Category", value: report.category },
+                  { label: "Tracking ID", value: report.tracking_id },
+                  {
+                    label: "Category",
+                    value: report.category.replace(/_/g, " "),
+                  },
                   { label: "Severity", value: report.severity },
-                  { label: "Status", value: report.status.replace("_", " ") },
-                  { label: "Submitted", value: formatDateTime(report.createdAt) },
-                  { label: "Last Updated", value: formatDateTime(report.updatedAt) },
-                  { label: "Evidence Files", value: String(report.evidenceCount) },
-                  { label: "Case Notes", value: String(report.notesCount) },
-                  { label: "Assigned To", value: "Unassigned" },
+                  {
+                    label: "Status",
+                    value: statusLabel[report.status],
+                  },
+                  {
+                    label: "Submitted",
+                    value: formatDateTime(report.created_at),
+                  },
+                  {
+                    label: "Last Updated",
+                    value: formatDateTime(report.updated_at),
+                  },
+                  {
+                    label: "Evidence Files",
+                    value: String(report.evidence_count),
+                  },
+                  {
+                    label: "Case Notes",
+                    value: String(report.notes_count),
+                  },
+                  {
+                    label: "Assigned To",
+                    value: report.assigned_to ?? "Unassigned",
+                  },
                 ].map((item) => (
-                  <div key={item.label} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{item.label}</span>
-                    <span className="font-medium text-right">{item.value}</span>
+                  <div
+                    key={item.label}
+                    className="flex justify-between text-sm"
+                  >
+                    <span className="text-muted-foreground">
+                      {item.label}
+                    </span>
+                    <span className="font-medium text-right">
+                      {item.value}
+                    </span>
                   </div>
                 ))}
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  Mark as Under Review
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  Escalate Severity
-                </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  Assign to Officer
-                </Button>
-                <Separator />
-                <Button variant="outline" size="sm" className="w-full justify-start text-destructive hover:text-destructive">
-                  Close Case
-                </Button>
-              </CardContent>
-            </Card>
+            {/* Quick Actions — role-dependent */}
+            {!hasRole("VIEWER") && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {report.status !== "UNDER_REVIEW" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                      disabled={updatingStatus}
+                      onClick={() => handleStatusChange("UNDER_REVIEW")}
+                    >
+                      Mark as Under Review
+                    </Button>
+                  )}
+                  {report.status !== "INVESTIGATING" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                      disabled={updatingStatus}
+                      onClick={() => handleStatusChange("INVESTIGATING")}
+                    >
+                      Start Investigation
+                    </Button>
+                  )}
+                  {report.severity !== "CRITICAL" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                      disabled={updatingSeverity}
+                      onClick={() => handleSeverityChange("CRITICAL")}
+                    >
+                      Escalate to Critical
+                    </Button>
+                  )}
+                  {report.status !== "CLOSED" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                      disabled={updatingStatus}
+                      onClick={() => handleStatusChange("CLOSED")}
+                    >
+                      Close Case
+                    </Button>
+                  )}
+
+                  {/* Delete — ADMIN only */}
+                  {hasRole("ADMIN") && (
+                    <>
+                      <Separator />
+                      {confirmDelete ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-destructive">
+                            Are you sure? This cannot be undone.
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="flex-1"
+                              disabled={deleting}
+                              onClick={handleDelete}
+                            >
+                              {deleting ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                "Confirm Delete"
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => setConfirmDelete(false)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-destructive hover:text-destructive"
+                          onClick={() => setConfirmDelete(true)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                          Delete Report
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </main>
