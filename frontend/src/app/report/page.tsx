@@ -53,6 +53,7 @@ import {
   scoreSeverity,
 } from "@/lib/api";
 import { generateReportPdf } from "@/lib/generate-pdf";
+import { cn } from "@/lib/utils";
 import { GridPattern } from "@/components/illustrations";
 
 /* ── Categories ── */
@@ -878,12 +879,22 @@ function StepDetails({
                       aiLoading || charCount < 30 || !category || !!aiFormatted
                     }
                     onClick={handleAiFormat}
-                    className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    className={cn(
+                      "h-8 gap-1.5 text-xs transition-all duration-300 rounded-full px-3.5",
+                      aiLoading
+                        ? "text-primary bg-primary/10"
+                        : charCount >= 30 && category && !aiFormatted
+                          ? "text-primary bg-primary/10 hover:bg-primary/20 shadow-[0_0_12px_rgba(120,200,140,0.3)] hover:shadow-[0_0_20px_rgba(120,200,140,0.5)] border border-primary/30"
+                          : "text-muted-foreground hover:text-primary hover:bg-primary/10",
+                    )}
                   >
                     {aiLoading ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
+                      <Sparkles className={cn(
+                        "h-3.5 w-3.5",
+                        charCount >= 30 && category && !aiFormatted && "animate-pulse",
+                      )} />
                     )}
                     {aiLoading ? "Formatting..." : "Format with AI"}
                   </Button>
