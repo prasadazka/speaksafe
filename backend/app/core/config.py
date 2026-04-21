@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     ENVIRONMENT: str = "development"
     GCS_BUCKET: str = "speaksafe-evidence"
+    CORS_ORIGINS: str = ""
 
 
 settings = Settings()
