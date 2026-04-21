@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
@@ -12,6 +12,8 @@ class ReportCreate(BaseModel):
     category: ReportCategory
     description: str = Field(min_length=10, max_length=5000)
     severity: Severity = Severity.LOW
+    occurred_at: date | None = None
+    location: str | None = Field(None, max_length=200)
 
 
 class ReportStatusUpdate(BaseModel):
@@ -34,6 +36,7 @@ class ReportPublic(BaseModel):
 
 class ReportSubmitted(BaseModel):
     """Returned after successful submission."""
+    id: uuid.UUID
     tracking_id: str
     message: str = "Report submitted successfully. Save your tracking ID."
 
@@ -45,6 +48,8 @@ class ReportDetail(BaseModel):
     category: ReportCategory
     severity: Severity
     description: str
+    occurred_at: date | None
+    location: str | None
     status: ReportStatus
     resolution: str | None
     assigned_to: uuid.UUID | None
@@ -63,6 +68,8 @@ class ReportListItem(BaseModel):
     category: ReportCategory
     severity: Severity
     status: ReportStatus
+    occurred_at: date | None
+    location: str | None
     evidence_count: int
     notes_count: int
     created_at: datetime

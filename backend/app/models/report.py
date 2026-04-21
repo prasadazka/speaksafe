@@ -1,9 +1,9 @@
+import datetime
 import enum
 import random
 import uuid
-from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, Integer, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, Enum, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -13,8 +13,13 @@ from app.db.base import Base
 class ReportCategory(str, enum.Enum):
     FRAUD = "FRAUD"
     HARASSMENT = "HARASSMENT"
+    DISCRIMINATION = "DISCRIMINATION"
     DATA_MISUSE = "DATA_MISUSE"
     POLICY_VIOLATION = "POLICY_VIOLATION"
+    SAFETY_CONCERN = "SAFETY_CONCERN"
+    CORRUPTION = "CORRUPTION"
+    ENVIRONMENTAL = "ENVIRONMENTAL"
+    RETALIATION = "RETALIATION"
     OTHER = "OTHER"
 
 
@@ -33,7 +38,7 @@ class ReportStatus(str, enum.Enum):
 
 
 def generate_tracking_id() -> str:
-    year = datetime.now().year
+    year = datetime.datetime.now().year
     num = random.randint(1000, 9999)
     return f"SS-{year}-{num}"
 
@@ -54,6 +59,8 @@ class Report(Base):
         Enum(Severity, name="severity"), nullable=False, default=Severity.LOW
     )
     description: Mapped[str] = mapped_column(Text, nullable=False)
+    occurred_at: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    location: Mapped[str | None] = mapped_column(String(200), nullable=True)
     status: Mapped[ReportStatus] = mapped_column(
         Enum(ReportStatus, name="report_status"), nullable=False, default=ReportStatus.OPEN
     )
@@ -64,9 +71,9 @@ class Report(Base):
     evidence_count: Mapped[int] = mapped_column(Integer, default=0)
     notes_count: Mapped[int] = mapped_column(Integer, default=0)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

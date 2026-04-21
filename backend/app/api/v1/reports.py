@@ -34,6 +34,8 @@ async def submit_report(
         category=payload.category,
         severity=payload.severity,
         description=payload.description,
+        occurred_at=payload.occurred_at,
+        location=payload.location,
     )
     db.add(report)
     await db.flush()
@@ -46,7 +48,7 @@ async def submit_report(
     await db.refresh(report)
 
     return ApiResponse(
-        data=ReportSubmitted(tracking_id=report.tracking_id).model_dump(),
+        data=ReportSubmitted(id=report.id, tracking_id=report.tracking_id).model_dump(mode="json"),
     )
 
 

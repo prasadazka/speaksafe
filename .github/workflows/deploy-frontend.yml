@@ -1,0 +1,67 @@
+name: Frontend — Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  GCP_PROJECT_ID: wbtool-494011
+  GCP_REGION: me-central1
+  SERVICE_NAME: speaksafe-web
+  REGISTRY: me-central1-docker.pkg.dev
+
+jobs:
+  # ── Build & Deploy ──
+  deploy:
+    name: Build & Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      - name: Build & Push Image
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://speaksafe-api-99513386035.me-central1.run.app' }} \
+            -t $IMAGE ./frontend
+          docker tag $IMAGE ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.SERVICE_NAME }}:latest
+          docker push $IMAGE
+          docker push ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.SERVICE_NAME }}:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --port 3000 \
+            --allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 3 \
+            --memory 512Mi \
+            --cpu 1 \
+            --set-env-vars "NODE_ENV=production" \
+            --set-env-vars "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://speaksafe-api-99513386035.me-central1.run.app' }}" \
+            --set-env-vars "GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }}" \
+            --set-env-vars "GOOGLE_CLOUD_LOCATION=${{ env.GCP_REGION }}" \
+            --quiet
+
+      - name: Show service URL
+        run: |
+          gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --format "value(status.url)"
