@@ -39,7 +39,10 @@ async def submit_report(
         if not exists.scalar_one_or_none():
             break
     else:
-        raise HTTPException(status_code=503, detail="Unable to generate unique tracking ID. Please retry.")
+        raise HTTPException(
+            status_code=503,
+            detail="Unable to generate unique tracking ID.",
+        )
 
     report = Report(
         tracking_id=tid,
