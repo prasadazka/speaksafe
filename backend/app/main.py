@@ -6,6 +6,7 @@ from sqlalchemy import text
 
 from app.api.v1.auth import router as auth_router
 from app.api.v1.evidence import router as evidence_router
+from app.api.v1.notes import router as notes_router
 from app.api.v1.reports import router as reports_router
 from app.db.session import engine
 
@@ -28,6 +29,7 @@ app = FastAPI(
 app.include_router(auth_router)
 app.include_router(reports_router)
 app.include_router(evidence_router)
+app.include_router(notes_router)
 
 
 @app.get("/health")
