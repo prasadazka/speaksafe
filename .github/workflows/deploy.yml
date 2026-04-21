@@ -1,0 +1,178 @@
+name: Build & Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  GCP_PROJECT_ID: wbtool-494011
+  GCP_REGION: me-central1
+  FRONTEND_SERVICE: speaksafe-web
+  BACKEND_SERVICE: speaksafe-api
+  ARTIFACT_REGISTRY: ${{ vars.GCP_REGION || 'me-central1' }}-docker.pkg.dev
+
+jobs:
+  # ──────────────────────────────────────────
+  # Lint & Test — Frontend
+  # ──────────────────────────────────────────
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm test -- --passWithNoTests
+
+  # ──────────────────────────────────────────
+  # Lint & Test — Backend
+  # ──────────────────────────────────────────
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - run: pip install -r requirements.txt
+      - run: ruff check .
+      - run: mypy . --ignore-missing-imports
+      - run: pytest --tb=short -q
+
+  # ──────────────────────────────────────────
+  # Deploy Frontend to Cloud Run
+  # ──────────────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: [test-frontend]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }} --quiet
+
+      - name: Set environment tag
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "suffix=prod" >> $GITHUB_OUTPUT
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "suffix=staging" >> $GITHUB_OUTPUT
+            echo "tag=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build & Push Frontend Image
+        run: |
+          IMAGE=${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.FRONTEND_SERVICE }}:${{ steps.env.outputs.tag }}
+          docker build -t $IMAGE ./frontend
+          docker push $IMAGE
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.FRONTEND_SERVICE }}-${{ steps.env.outputs.suffix }} \
+            --image ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.FRONTEND_SERVICE }}:${{ steps.env.outputs.tag }} \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --port 3000 \
+            --allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 10 \
+            --memory 512Mi \
+            --cpu 1 \
+            --set-env-vars "NODE_ENV=production" \
+            --quiet
+
+  # ──────────────────────────────────────────
+  # Deploy Backend to Cloud Run
+  # ──────────────────────────────────────────
+  deploy-backend:
+    name: Deploy Backend
+    needs: [test-backend]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }} --quiet
+
+      - name: Set environment tag
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "suffix=prod" >> $GITHUB_OUTPUT
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "suffix=staging" >> $GITHUB_OUTPUT
+            echo "tag=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build & Push Backend Image
+        run: |
+          IMAGE=${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.BACKEND_SERVICE }}:${{ steps.env.outputs.tag }}
+          docker build -t $IMAGE ./backend
+          docker push $IMAGE
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.BACKEND_SERVICE }}-${{ steps.env.outputs.suffix }} \
+            --image ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.BACKEND_SERVICE }}:${{ steps.env.outputs.tag }} \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --port 8000 \
+            --no-allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 10 \
+            --memory 1Gi \
+            --cpu 2 \
+            --set-env-vars "ENVIRONMENT=production" \
+            --quiet
