@@ -137,6 +137,9 @@ export default function HomePage() {
             <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
           </nav>
           <div className="flex items-center gap-2">
+            <Link href="/admin/login">
+              <Button variant="ghost" size="sm" className="text-muted-foreground">Admin</Button>
+            </Link>
             <Link href="/track">
               <Button variant="ghost" size="sm" className="text-muted-foreground">Check Status</Button>
             </Link>
