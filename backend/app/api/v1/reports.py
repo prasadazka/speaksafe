@@ -11,10 +11,10 @@ from app.schemas.report import (
     ReportCreate,
     ReportDetail,
     ReportListItem,
+    ReportPublic,
     ReportSeverityUpdate,
     ReportStatusUpdate,
     ReportSubmitted,
-    ReportPublic,
 )
 
 router = APIRouter(prefix="/api/v1/reports", tags=["Reports"])
