@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user
 from app.db.session import get_db
+from app.models.admin_user import AdminUser
 from app.models.report import Report, ReportCategory, ReportStatus, Severity
 from app.schemas.report import (
     ApiResponse,
@@ -75,6 +77,7 @@ async def list_reports(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    _user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
     query = select(Report).where(Report.is_deleted.is_(False))
 
@@ -106,6 +109,7 @@ async def list_reports(
 async def get_report(
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    _user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
     result = await db.execute(
         select(Report).where(Report.id == report_id, Report.is_deleted.is_(False))
@@ -125,6 +129,7 @@ async def update_status(
     report_id: uuid.UUID,
     payload: ReportStatusUpdate,
     db: AsyncSession = Depends(get_db),
+    _user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
     result = await db.execute(
         select(Report).where(Report.id == report_id, Report.is_deleted.is_(False))
@@ -148,6 +153,7 @@ async def update_severity(
     report_id: uuid.UUID,
     payload: ReportSeverityUpdate,
     db: AsyncSession = Depends(get_db),
+    _user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
     result = await db.execute(
         select(Report).where(Report.id == report_id, Report.is_deleted.is_(False))
@@ -170,6 +176,7 @@ async def update_severity(
 async def delete_report(
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    _user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
     result = await db.execute(
         select(Report).where(Report.id == report_id, Report.is_deleted.is_(False))
