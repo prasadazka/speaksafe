@@ -38,9 +38,16 @@ class ReportStatus(str, enum.Enum):
 
 
 def generate_tracking_id() -> str:
+    """Generate a tracking ID like SS-2026-A7K2.
+
+    Uses 4 alphanumeric chars (0-9, A-Z excluding ambiguous I/O/L),
+    giving ~33^4 = ~1.2 million unique IDs per year — far safer than
+    the old 4-digit random which only had 9,000 possibilities.
+    """
     year = datetime.datetime.now().year
-    num = random.randint(1000, 9999)
-    return f"SS-{year}-{num}"
+    alphabet = "0123456789ABCDEFGHJKMNPQRSTUVWXYZ"  # 33 chars, no I/O/L
+    code = "".join(random.choices(alphabet, k=4))
+    return f"SS-{year}-{code}"
 
 
 class Report(Base):

@@ -8,7 +8,7 @@ from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
 from app.models.audit_log import AuditAction
-from app.models.report import Report, ReportCategory, ReportStatus, Severity
+from app.models.report import Report, ReportCategory, ReportStatus, Severity, generate_tracking_id
 from app.schemas.report import (
     ApiResponse,
     ReportCreate,
@@ -30,7 +30,19 @@ async def submit_report(
     payload: ReportCreate,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
+    # Generate a unique tracking ID with retry on collision
+    for _ in range(10):
+        tid = generate_tracking_id()
+        exists = await db.execute(
+            select(Report.id).where(Report.tracking_id == tid)
+        )
+        if not exists.scalar_one_or_none():
+            break
+    else:
+        raise HTTPException(status_code=503, detail="Unable to generate unique tracking ID. Please retry.")
+
     report = Report(
+        tracking_id=tid,
         category=payload.category,
         severity=payload.severity,
         description=payload.description,

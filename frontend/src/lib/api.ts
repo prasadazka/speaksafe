@@ -97,6 +97,30 @@ export async function formatDescription(
   return data.formatted;
 }
 
+/* ── Track report ── */
+
+export interface ReportStatus {
+  tracking_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function trackReport(
+  trackingId: string,
+): Promise<ApiResponse<ReportStatus>> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/reports/track/${encodeURIComponent(trackingId)}`,
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.detail ?? `Report not found (${res.status})`);
+  }
+
+  return res.json();
+}
+
 /* ── Evidence ── */
 
 export async function uploadEvidence(
