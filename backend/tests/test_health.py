@@ -1,3 +1,9 @@
+import os
+
+# Use SQLite for tests — no real DB needed
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
+os.environ.setdefault("SECRET_KEY", "test-secret")
+
 from fastapi.testclient import TestClient
 
 from app.main import app
