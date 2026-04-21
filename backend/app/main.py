@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import text
 
+from app.api.v1.reports import router as reports_router
 from app.db.session import engine
 
 
@@ -21,6 +22,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+app.include_router(reports_router)
 
 
 @app.get("/health")
