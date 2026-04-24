@@ -37,8 +37,7 @@ _origins = [
 ]
 if not _origins:
     _origins = [
-        "https://speaksafe-web-99513386035.me-central1.run.app",
-        "https://speaksafe-web-quwukiaoia-ww.a.run.app",
+        "https://sawtsafe-web-99513386035.me-central1.run.app",
         "http://localhost:3000",
     ]
 
