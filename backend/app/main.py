@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="SpeakSafe API",
+    title="Sawt Safe API",
     description="Enterprise Whistleblowing Platform",
     version="0.1.0",
     lifespan=lifespan,
@@ -64,4 +64,4 @@ async def health() -> dict[str, str]:
 
 @app.get("/")
 async def root() -> dict[str, str]:
-    return {"service": "speaksafe-api", "version": "0.1.0"}
+    return {"service": "sawtsafe-api", "version": "0.1.0"}

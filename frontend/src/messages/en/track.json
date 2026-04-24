@@ -1,0 +1,17 @@
+{
+  "title": "Track Your Report",
+  "description": "Enter your tracking ID to check the current status of your report.",
+  "placeholder": "SS-2026-XXXX",
+  "trackButton": "Track",
+  "trackingId": "Tracking ID",
+  "currentStatus": "Current status",
+  "submitted": "Submitted",
+  "lastUpdated": "Last Updated",
+  "notFound": "Report not found.",
+  "unableToFind": "Unable to find that report.",
+  "timeAgo": {
+    "justNow": "Just now",
+    "hoursAgo": "{hours}h ago",
+    "daysAgo": "{days}d ago"
+  }
+}

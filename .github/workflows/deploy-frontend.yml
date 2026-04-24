@@ -7,7 +7,7 @@ on:
 env:
   GCP_PROJECT_ID: wbtool-494011
   GCP_REGION: me-central1
-  SERVICE_NAME: speaksafe-web
+  SERVICE_NAME: sawtsafe-web
   REGISTRY: me-central1-docker.pkg.dev
 
 jobs:
@@ -34,18 +34,18 @@ jobs:
 
       - name: Build & Push Image
         run: |
-          IMAGE=${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          IMAGE=${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/sawtsafe/${{ env.SERVICE_NAME }}:${{ github.sha }}
           docker build \
-            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://speaksafe-api-99513386035.me-central1.run.app' }} \
+            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://sawtsafe-api-99513386035.me-central1.run.app' }} \
             -t $IMAGE ./frontend
-          docker tag $IMAGE ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.SERVICE_NAME }}:latest
+          docker tag $IMAGE ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/sawtsafe/${{ env.SERVICE_NAME }}:latest
           docker push $IMAGE
-          docker push ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.SERVICE_NAME }}:latest
+          docker push ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/sawtsafe/${{ env.SERVICE_NAME }}:latest
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy ${{ env.SERVICE_NAME }} \
-            --image ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/speaksafe/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            --image ${{ env.REGISTRY }}/${{ env.GCP_PROJECT_ID }}/sawtsafe/${{ env.SERVICE_NAME }}:${{ github.sha }} \
             --region ${{ env.GCP_REGION }} \
             --platform managed \
             --port 3000 \
@@ -55,7 +55,7 @@ jobs:
             --memory 512Mi \
             --cpu 1 \
             --set-env-vars "NODE_ENV=production" \
-            --set-env-vars "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://speaksafe-api-99513386035.me-central1.run.app' }}" \
+            --set-env-vars "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://sawtsafe-api-99513386035.me-central1.run.app' }}" \
             --set-env-vars "GOOGLE_CLOUD_PROJECT=${{ env.GCP_PROJECT_ID }}" \
             --set-env-vars "VERTEX_AI_LOCATION=us-central1" \
             --quiet

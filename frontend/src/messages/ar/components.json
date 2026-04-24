@@ -1,0 +1,29 @@
+{
+  "terminal": {
+    "header": "صوت آمن — قناة مشفّرة",
+    "encrypted": "مشفّر",
+    "lines": {
+      "establishing": "جارٍ إنشاء قناة آمنة...",
+      "encryptionVerified": "تم التحقق من التشفير الشامل",
+      "identityStripped": "تم إزالة هوية الشبكة عند البوابة",
+      "zeroData": "لا يتم جمع أي بيانات شخصية",
+      "anonymousConnection": "تم إنشاء اتصال مجهول الهوية",
+      "voiceMatters": "صوتك مهم. هويتك ملكك.",
+      "speakFreely": "تحدّث بحرية. نحن نحمي الباقي.",
+      "channelSecured": "القناة مؤمّنة — تشفير 256-بت نشط",
+      "noTrace": "بدون حساب. بدون أثر. بدون تنازل.",
+      "trustedWorldwide": "موثوقة من قادة الامتثال حول العالم.",
+      "zeroBreaches": "مراقبة النزاهة: صفر اختراقات مسجلة",
+      "courageContagious": "الشجاعة مُعدية. تبدأ من هنا."
+    }
+  },
+  "dropzone": {
+    "dragOrBrowse": "اسحب الملفات هنا أو",
+    "browse": "تصفّح",
+    "fileTypes": "PDF، صور، مستندات، صوت أو فيديو — حتى 100 ميغابايت لكل ملف (بحد أقصى {maxFiles} ملفات)",
+    "filesAdded": "{count} من {maxFiles} ملفات مضافة",
+    "notAccepted": "\"{name}\" نوع ملف غير مقبول.",
+    "tooLarge": "\"{name}\" يتجاوز الحد الأقصى 100 ميغابايت.",
+    "maxFiles": "الحد الأقصى {maxFiles} ملفات."
+  }
+}

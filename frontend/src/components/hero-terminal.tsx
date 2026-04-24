@@ -2,54 +2,56 @@
 
 import { useEffect, useState } from "react";
 import { Shield, Lock, Fingerprint, CheckCircle2, Zap, Eye } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface TerminalLine {
-  text: string;
+  textKey: string;
   type: "system" | "success" | "marketing" | "highlight";
   icon?: React.ElementType;
 }
 
-const lines: TerminalLine[] = [
-  { text: "Establishing secure channel...", type: "system" },
-  { text: "End-to-end encryption verified", type: "success", icon: Lock },
-  { text: "Network identity stripped at gateway", type: "success", icon: Shield },
-  { text: "Zero personal data collected", type: "success", icon: Fingerprint },
-  { text: "Anonymous connection established", type: "success", icon: CheckCircle2 },
-  { text: "Your voice matters. Your identity stays yours.", type: "marketing" },
-  { text: "Speak freely. We guard the rest.", type: "highlight" },
-  { text: "Channel secured — 256-bit encryption active", type: "success", icon: Zap },
-  { text: "No account. No trace. No compromise.", type: "highlight" },
-  { text: "Trusted by compliance leaders worldwide.", type: "marketing" },
-  { text: "Integrity monitoring: zero breaches recorded", type: "success", icon: Eye },
-  { text: "Courage is contagious. Yours starts here.", type: "highlight" },
+const lineDefs: TerminalLine[] = [
+  { textKey: "establishing", type: "system" },
+  { textKey: "encryptionVerified", type: "success", icon: Lock },
+  { textKey: "identityStripped", type: "success", icon: Shield },
+  { textKey: "zeroData", type: "success", icon: Fingerprint },
+  { textKey: "anonymousConnection", type: "success", icon: CheckCircle2 },
+  { textKey: "voiceMatters", type: "marketing" },
+  { textKey: "speakFreely", type: "highlight" },
+  { textKey: "channelSecured", type: "success", icon: Zap },
+  { textKey: "noTrace", type: "highlight" },
+  { textKey: "trustedWorldwide", type: "marketing" },
+  { textKey: "zeroBreaches", type: "success", icon: Eye },
+  { textKey: "courageContagious", type: "highlight" },
 ];
 
 export function HeroTerminal({ className }: { className?: string }) {
+  const t = useTranslations("components");
   const [visibleLines, setVisibleLines] = useState<number>(0);
   const [charIndex, setCharIndex] = useState<number>(0);
-  const [isTyping, setIsTyping] = useState(true);
+
+  const lines = lineDefs.map((def) => ({
+    ...def,
+    text: t(`terminal.lines.${def.textKey}`),
+  }));
 
   useEffect(() => {
     if (visibleLines >= lines.length) {
-      // Restart the cycle after a pause
       const restartTimer = setTimeout(() => {
         setVisibleLines(0);
         setCharIndex(0);
-        setIsTyping(true);
       }, 4000);
       return () => clearTimeout(restartTimer);
     }
 
     const currentLine = lines[visibleLines];
     if (charIndex < currentLine.text.length) {
-      // Type character by character
       const speed = currentLine.type === "system" ? 30 : 22;
       const timer = setTimeout(() => {
         setCharIndex((c) => c + 1);
       }, speed);
       return () => clearTimeout(timer);
     } else {
-      // Line finished, pause then move to next
       const pause = currentLine.type === "highlight" ? 1200 : currentLine.type === "marketing" ? 900 : 500;
       const timer = setTimeout(() => {
         setVisibleLines((v) => v + 1);
@@ -57,7 +59,7 @@ export function HeroTerminal({ className }: { className?: string }) {
       }, pause);
       return () => clearTimeout(timer);
     }
-  }, [visibleLines, charIndex]);
+  }, [visibleLines, charIndex, lines]);
 
   const getLineColor = (type: TerminalLine["type"]) => {
     switch (type) {
@@ -72,7 +74,6 @@ export function HeroTerminal({ className }: { className?: string }) {
     }
   };
 
-  // Only show the last 8 lines to keep it compact
   const startIdx = Math.max(0, visibleLines - 7);
   const displayLines = lines.slice(startIdx, visibleLines + 1);
 
@@ -86,10 +87,10 @@ export function HeroTerminal({ className }: { className?: string }) {
             <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
             <div className="w-2.5 h-2.5 rounded-full bg-primary/60" />
           </div>
-          <span className="text-xs text-muted-foreground font-mono ml-2">speaksafe — secure channel</span>
+          <span className="text-xs text-muted-foreground font-mono ml-2">{t("terminal.header")}</span>
           <div className="ml-auto flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] text-primary/70 font-mono">ENCRYPTED</span>
+            <span className="text-[10px] text-primary/70 font-mono">{t("terminal.encrypted")}</span>
           </div>
         </div>
 
@@ -104,12 +105,11 @@ export function HeroTerminal({ className }: { className?: string }) {
 
             return (
               <div
-                key={`${globalIdx}-${line.text}`}
+                key={`${globalIdx}-${line.textKey}`}
                 className={`flex items-start gap-2.5 transition-opacity duration-300 ${
                   isCurrentLine ? "opacity-100" : "opacity-80"
                 }`}
               >
-                {/* Line prefix */}
                 {line.type === "success" && line.icon ? (
                   <line.icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 ) : line.type === "system" ? (
@@ -130,7 +130,6 @@ export function HeroTerminal({ className }: { className?: string }) {
             );
           })}
 
-          {/* Blinking cursor when idle */}
           {visibleLines >= lines.length && (
             <div className="flex items-center gap-2.5">
               <span className="text-muted-foreground/60">$</span>
@@ -139,7 +138,6 @@ export function HeroTerminal({ className }: { className?: string }) {
           )}
         </div>
 
-        {/* Bottom glow */}
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-primary/5 to-transparent pointer-events-none" />
       </div>
     </div>

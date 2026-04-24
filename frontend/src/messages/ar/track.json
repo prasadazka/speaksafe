@@ -1,0 +1,17 @@
+{
+  "title": "تتبع بلاغك",
+  "description": "أدخل رمز التتبع للاطلاع على الحالة الراهنة لبلاغك.",
+  "placeholder": "SS-2026-XXXX",
+  "trackButton": "تتبع",
+  "trackingId": "رمز التتبع",
+  "currentStatus": "الحالة الحالية",
+  "submitted": "تاريخ التقديم",
+  "lastUpdated": "آخر تحديث",
+  "notFound": "لم يتم العثور على البلاغ.",
+  "unableToFind": "تعذر العثور على هذا البلاغ.",
+  "timeAgo": {
+    "justNow": "الآن",
+    "hoursAgo": "منذ {hours} ساعة",
+    "daysAgo": "منذ {days} يوم"
+  }
+}

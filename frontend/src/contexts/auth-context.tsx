@@ -16,7 +16,7 @@ import {
   type AdminRole,
 } from "@/lib/admin-api";
 
-const TOKEN_KEY = "speaksafe_admin_token";
+const TOKEN_KEY = "sawtsafe_admin_token";
 
 interface AuthContextValue {
   user: AdminProfile | null;

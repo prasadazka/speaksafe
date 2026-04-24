@@ -1,0 +1,161 @@
+{
+  "hero": {
+    "pill": "End-to-end encrypted \u00b7 Anonymous",
+    "heading1": "Speak up.",
+    "heading2": "Stay safe.",
+    "description": "A confidential, anonymous channel for raising workplace concerns. No identity collected. No digital footprint. No risk. Enterprise-grade protection built for those who dare to do the right thing. Trusted by leading organizations across the globe.",
+    "raiseConcern": "Raise a Concern",
+    "checkStatus": "Check the Status"
+  },
+  "stats": {
+    "encryptionValue": "256-bit",
+    "encryptionLabel": "Encryption Standard",
+    "uptimeValue": "99.9%",
+    "uptimeLabel": "Guaranteed Uptime",
+    "responseValue": "<200ms",
+    "responseLabel": "Platform Response",
+    "dataValue": "Zero",
+    "dataLabel": "Identity Data Stored"
+  },
+  "howItWorks": {
+    "pill": "Seamless & Secure",
+    "heading": "Three steps. Complete anonymity.",
+    "subtitle": "No accounts. No emails. No identification. Your courage deserves protection.",
+    "steps": [
+      {
+        "title": "Raise Your\nConcern",
+        "desc": "Describe what you witnessed through our encrypted channel. No account, no email, no identity \u2014 ever."
+      },
+      {
+        "title": "Receive a\nSecure Code",
+        "desc": "Instantly get a unique, anonymous access code. This is your private key to follow up \u2014 keep it safe."
+      },
+      {
+        "title": "Stay\nInformed",
+        "desc": "Return anytime with your secure code. See real-time progress updates without ever revealing who you are."
+      }
+    ],
+    "cardCategories": ["Discrimination", "Financial Misconduct", "Health & Safety", "Harassment & Bullying", "Retaliation", "Environmental Concern", "Policy Violation"],
+    "secureCode": "Secure Code",
+    "secureCodePlaceholder": "XXX-XXXX",
+    "statusOpen": "Open",
+    "statusUnderReview": "Under Review",
+    "statusClosed": "Closed"
+  },
+  "whySawtSafe": {
+    "pill": "Why Sawt Safe",
+    "heading1": "Your voice matters.",
+    "heading2": "Your safety is non-negotiable.",
+    "description": "Whistleblowers expose fraud worth billions every year \u2014 yet most remain silent out of fear of retaliation. Sawt Safe eliminates that fear entirely. Your identity is never collected, never stored, and never at risk.",
+    "bullets": [
+      "Zero personal data collected \u2014 by design, not by policy",
+      "Encrypted before it leaves your device, encrypted at every stage",
+      "Aligned with EU, GDPR, and international protection standards",
+      "Chosen by compliance leaders across industries worldwide"
+    ]
+  },
+  "features": {
+    "pill": "Enterprise-Grade Protection",
+    "heading": "Built for trust. Engineered for courage.",
+    "subtitle": "Every layer of Sawt Safe is purpose-built to protect the people who protect organizations.",
+    "items": [
+      {
+        "title": "Zero-Knowledge Privacy",
+        "desc": "We never collect your name, email, IP address, or device fingerprint. Anonymity is engineered into every layer \u2014 not just a policy."
+      },
+      {
+        "title": "Military-Grade Encryption",
+        "desc": "Every disclosure, note, and evidence file is encrypted before it leaves your device \u2014 and stays encrypted at every stage."
+      },
+      {
+        "title": "Tamper-Proof Audit Trail",
+        "desc": "Every action is permanently recorded in an immutable ledger. Unalterable records that stand up to any legal scrutiny."
+      },
+      {
+        "title": "Worldwide Compliance",
+        "desc": "Purpose-built to meet the EU Whistleblower Directive, GDPR, SOC 2 Type II, and regional regulatory frameworks."
+      },
+      {
+        "title": "Instant Response Workflow",
+        "desc": "Compliance teams receive real-time alerts, prioritize by severity, and collaborate on investigations \u2014 ensuring nothing falls through the cracks."
+      },
+      {
+        "title": "Always-On Availability",
+        "desc": "Resilient cloud infrastructure with 99.9% uptime guarantee. Your channel for truth stays accessible when it matters most."
+      }
+    ]
+  },
+  "architecture": {
+    "pill": "Architecture",
+    "heading1": "Zero-knowledge by design,",
+    "heading2": "not by promise.",
+    "description": "Sawt Safe\u2019s architecture ensures that even system administrators cannot link a report to a person. Data flows through isolated, encrypted layers with no single point capable of identifying a reporter.",
+    "bullets": [
+      "IP addresses stripped at network ingress \u2014 never logged",
+      "All sensitive fields encrypted at rest with per-record keys",
+      "Encryption keys managed with automatic rotation",
+      "Append-only audit logs \u2014 tamper-proof compliance evidence"
+    ]
+  },
+  "compliance": {
+    "pill": "Regulatory Compliance",
+    "heading": "Meets the world\u2019s strictest standards.",
+    "subtitle": "Sawt Safe is designed from the ground up to satisfy international whistleblower protection and data privacy regulations.",
+    "items": [
+      { "name": "EU Directive 2019/1937", "desc": "Whistleblower Protection" },
+      { "name": "Nazaha", "desc": "Anti-Corruption Authority" },
+      { "name": "SOC 2 Type II", "desc": "Security Controls" },
+      { "name": "ISO 27001", "desc": "Information Security" }
+    ],
+    "bottomStats": [
+      "7-day acknowledgment guarantee",
+      "3-month feedback deadline enforced",
+      "Configurable data retention & auto-purge"
+    ]
+  },
+  "forOrganizations": {
+    "pill": "For Organizations",
+    "heading": "Empower your compliance team.",
+    "description": "A powerful admin dashboard designed for speed, clarity, and accountability. Manage cases, collaborate securely, and generate audit-ready reports.",
+    "features": [
+      { "title": "Role-Based Access", "desc": "Admin, Compliance Officer, and Viewer roles with granular permissions." },
+      { "title": "Real-Time Alerts", "desc": "Instant notifications for new reports and severity escalations." },
+      { "title": "Case Management", "desc": "Full lifecycle \u2014 triage, investigate, annotate, and resolve." },
+      { "title": "Audit-Ready Reports", "desc": "Export compliance reports. Every action timestamped and recorded." },
+      { "title": "White-Label Ready", "desc": "Deploy under your own brand with custom domain and colors." },
+      { "title": "AI-Assisted Triage", "desc": "Auto-classification, severity scoring, and duplicate detection." }
+    ]
+  },
+  "faq": {
+    "pill": "FAQ",
+    "heading": "Frequently asked questions",
+    "items": [
+      {
+        "q": "Is my identity truly anonymous?",
+        "a": "Absolutely. Sawt Safe uses a zero-knowledge architecture \u2014 no IP addresses are logged, no accounts are created, and no identifying metadata is stored. Your secure code is the only connection to your disclosure."
+      },
+      {
+        "q": "What happens after I raise a concern?",
+        "a": "Your disclosure is encrypted and stored securely. A dedicated compliance officer reviews it, investigates as needed, and updates the status. You can follow progress anytime using your secure code."
+      },
+      {
+        "q": "Can my employer find out who I am?",
+        "a": "No. The platform is architected so that even system administrators cannot trace a disclosure back to any individual. There are no user accounts, no session identifiers, and all network fingerprints are stripped before processing."
+      },
+      {
+        "q": "What types of concerns can I raise?",
+        "a": "Fraud, harassment, data misuse, policy violations, safety hazards, and any ethical or compliance concern. If you\u2019re unsure whether something qualifies \u2014 raise it. The compliance team will assess."
+      },
+      {
+        "q": "Does Sawt Safe meet regulatory requirements?",
+        "a": "Yes. Sawt Safe is purpose-built to align with the EU Whistleblower Protection Directive (2019/1937), GDPR, SOC 2, and regional frameworks including KSA governance standards."
+      }
+    ]
+  },
+  "cta": {
+    "heading": "Your courage deserves protection.",
+    "subtitle": "Anonymous. Encrypted. Untraceable. Raise your concern in under 3 minutes.",
+    "raiseConcern": "Raise a Concern",
+    "followUp": "Follow up Securely"
+  }
+}

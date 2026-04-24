@@ -1,0 +1,56 @@
+{
+  "brand": "صوت آمن",
+  "brandTagline": "إبلاغ مؤسسي مجهول الهوية. نحمي من يحمون المؤسسات.",
+  "nav": {
+    "about": "عن المنصة",
+    "features": "المميزات",
+    "compliance": "الامتثال",
+    "faq": "الأسئلة الشائعة",
+    "admin": "لوحة التحكم",
+    "raiseConcern": "تقديم بلاغ",
+    "newReport": "بلاغ جديد"
+  },
+  "footer": {
+    "platform": "المنصة",
+    "security": "الأمان",
+    "organization": "المؤسسة",
+    "raiseAConcern": "تقديم بلاغ",
+    "checkStatus": "تتبع الحالة",
+    "howItWorks": "كيف تعمل",
+    "faqs": "الأسئلة الشائعة",
+    "encryption": "التشفير",
+    "compliance": "الامتثال",
+    "architecture": "البنية التقنية",
+    "auditTrail": "سجل المراجعة",
+    "adminPortal": "بوابة الإدارة",
+    "documentation": "الوثائق",
+    "contact": "اتصل بنا",
+    "privacyPolicy": "سياسة الخصوصية",
+    "copyright": "صوت آمن. جميع الحقوق محفوظة.",
+    "privacy": "الخصوصية",
+    "terms": "الشروط",
+    "securityLink": "الأمان"
+  },
+  "language": {
+    "en": "English",
+    "ar": "العربية"
+  },
+  "loading": "جارٍ التحميل...",
+  "status": {
+    "OPEN": "مفتوح",
+    "UNDER_REVIEW": "قيد المراجعة",
+    "INVESTIGATING": "قيد التحقيق",
+    "CLOSED": "مغلق"
+  },
+  "severity": {
+    "LOW": "منخفض",
+    "MEDIUM": "متوسط",
+    "HIGH": "مرتفع",
+    "CRITICAL": "حرج"
+  },
+  "roles": {
+    "ADMIN": "مدير",
+    "COMPLIANCE_OFFICER": "مسؤول الامتثال",
+    "VIEWER": "مشاهد"
+  }
+}

@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     ENVIRONMENT: str = "development"
-    GCS_BUCKET: str = "speaksafe-evidence"
+    GCS_BUCKET: str = "sawtsafe-evidence"
     CORS_ORIGINS: str = ""
 
 

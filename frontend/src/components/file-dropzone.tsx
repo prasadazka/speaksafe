@@ -12,6 +12,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 const MAX_FILES = 5;
 const MAX_SIZE = 100 * 1024 * 1024; // 100 MB
@@ -51,6 +52,7 @@ interface FileDropzoneProps {
 }
 
 export function FileDropzone({ files, onChange }: FileDropzoneProps) {
+  const t = useTranslations("components");
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -63,11 +65,11 @@ export function FileDropzone({ files, onChange }: FileDropzoneProps) {
 
       for (const f of arr) {
         if (!ACCEPTED_TYPES.includes(f.type)) {
-          setError(`"${f.name}" is not an accepted file type.`);
+          setError(t("dropzone.notAccepted", { name: f.name }));
           continue;
         }
         if (f.size > MAX_SIZE) {
-          setError(`"${f.name}" exceeds the 100 MB limit.`);
+          setError(t("dropzone.tooLarge", { name: f.name }));
           continue;
         }
         valid.push(f);
@@ -75,11 +77,11 @@ export function FileDropzone({ files, onChange }: FileDropzoneProps) {
 
       const merged = [...files, ...valid].slice(0, MAX_FILES);
       if (files.length + valid.length > MAX_FILES) {
-        setError(`Maximum ${MAX_FILES} files allowed.`);
+        setError(t("dropzone.maxFiles", { maxFiles: MAX_FILES }));
       }
       onChange(merged);
     },
-    [files, onChange],
+    [files, onChange, t],
   );
 
   const removeFile = (index: number) => {
@@ -97,7 +99,7 @@ export function FileDropzone({ files, onChange }: FileDropzoneProps) {
   );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Drop zone */}
       <motion.div
         onDragOver={(e) => {
@@ -109,43 +111,54 @@ export function FileDropzone({ files, onChange }: FileDropzoneProps) {
         onClick={() => inputRef.current?.click()}
         animate={
           dragOver
-            ? { scale: 1.01, borderColor: "oklch(0.72 0.19 160 / 0.6)" }
-            : { scale: 1, borderColor: "oklch(0.3 0.015 260 / 0.4)" }
+            ? { scale: 1.005 }
+            : { scale: 1 }
         }
         transition={{ duration: 0.2 }}
-        className={`relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-10 cursor-pointer backdrop-blur-sm transition-all ${
+        className={`relative flex flex-col items-center justify-center gap-5 rounded-xl border-2 border-dashed min-h-[248px] p-10 cursor-pointer transition-all ${
           dragOver
-            ? "bg-primary/[0.06] shadow-[0_0_32px_oklch(0.72_0.19_160_/_0.1)]"
-            : "bg-card/30 hover:bg-card/50 hover:border-primary/30"
+            ? "bg-primary/[0.06] border-primary/50 shadow-[0_0_32px_oklch(0.72_0.19_160_/_0.1)]"
+            : "bg-muted/30 border-border hover:border-primary/30"
         }`}
       >
-        {/* Upload icon */}
-        <div
-          className={`h-14 w-14 rounded-2xl flex items-center justify-center transition-colors ${
-            dragOver
-              ? "bg-primary/15 text-primary"
-              : "bg-muted/50 text-muted-foreground"
-          }`}
+        {/* Upload icon — 64px */}
+        <svg
+          width="64"
+          height="64"
+          viewBox="0 0 64 64"
+          fill="none"
+          className={`transition-colors ${dragOver ? "text-primary" : "text-[#1C274C] dark:text-muted-foreground"}`}
         >
-          <Upload className="h-6 w-6 animate-float" />
-        </div>
+          <path
+            d="M32 42V22M32 22L24 30M32 22L40 30"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M12 42C12 48.627 17.373 54 24 54H40C46.627 54 52 48.627 52 42"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+        </svg>
         <div className="text-center">
-          <p className="text-sm font-medium">
-            Drag files here or{" "}
-            <span className="text-primary underline underline-offset-2 decoration-primary/40">
-              browse
+          <p className="text-lg md:text-2xl font-semibold text-foreground/80">
+            {t("dropzone.dragOrBrowse")}{" "}
+            <span className="text-primary underline underline-offset-4 decoration-primary/40 cursor-pointer">
+              {t("dropzone.browse")}
             </span>
           </p>
-          <p className="text-xs text-muted-foreground mt-1.5">
-            PDF, images, documents, audio, video — up to 100 MB each (max{" "}
-            {MAX_FILES} files)
+          <p className="text-sm md:text-lg text-muted-foreground mt-2">
+            {t("dropzone.fileTypes", { maxFiles: MAX_FILES })}
           </p>
         </div>
         {/* File count indicator */}
         {files.length > 0 && (
-          <div className="flex items-center gap-1.5 text-xs text-primary/80">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            {files.length} of {MAX_FILES} files added
+          <div className="flex items-center gap-2 text-sm text-primary/80 font-medium">
+            <CheckCircle2 className="h-4 w-4" />
+            {t("dropzone.filesAdded", { count: files.length, maxFiles: MAX_FILES })}
           </div>
         )}
         <input

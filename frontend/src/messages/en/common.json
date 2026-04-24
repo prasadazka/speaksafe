@@ -1,0 +1,56 @@
+{
+  "brand": "Sawt Safe",
+  "brandTagline": "Enterprise-grade anonymous reporting. Protecting those who protect organizations.",
+  "nav": {
+    "about": "About",
+    "features": "Features",
+    "compliance": "Compliance",
+    "faq": "FAQ",
+    "admin": "Admin",
+    "raiseConcern": "Raise a Concern",
+    "newReport": "New Report"
+  },
+  "footer": {
+    "platform": "Platform",
+    "security": "Security",
+    "organization": "Organization",
+    "raiseAConcern": "Raise a Concern",
+    "checkStatus": "Check Status",
+    "howItWorks": "How It Works",
+    "faqs": "FAQs",
+    "encryption": "Encryption",
+    "compliance": "Compliance",
+    "architecture": "Architecture",
+    "auditTrail": "Audit Trail",
+    "adminPortal": "Admin Portal",
+    "documentation": "Documentation",
+    "contact": "Contact",
+    "privacyPolicy": "Privacy Policy",
+    "copyright": "Sawt Safe. All rights reserved.",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "securityLink": "Security"
+  },
+  "language": {
+    "en": "English",
+    "ar": "العربية"
+  },
+  "loading": "Loading...",
+  "status": {
+    "OPEN": "Open",
+    "UNDER_REVIEW": "Under Review",
+    "INVESTIGATING": "Investigating",
+    "CLOSED": "Closed"
+  },
+  "severity": {
+    "LOW": "Low",
+    "MEDIUM": "Medium",
+    "HIGH": "High",
+    "CRITICAL": "Critical"
+  },
+  "roles": {
+    "ADMIN": "Admin",
+    "COMPLIANCE_OFFICER": "Officer",
+    "VIEWER": "Viewer"
+  }
+}

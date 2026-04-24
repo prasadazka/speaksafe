@@ -1,4 +1,4 @@
-# SpeakSafe — Enterprise Whistleblowing Platform
+# Sawt Safe — Enterprise Whistleblowing Platform
 
 ## Project Overview
 Secure, anonymous whistleblowing and compliance reporting platform. Enterprise-grade, scalable, and aligned with global governance standards (EU Whistleblower Directive, KSA regulations, SOC 2, GDPR).
@@ -100,7 +100,7 @@ Secure, anonymous whistleblowing and compliance reporting platform. Enterprise-g
 
 ### Module Structure
 ```
-speaksafe/
+sawtsafe/
 ├── frontend/                    # Next.js frontend
 │   ├── app/                     # App Router pages
 │   │   ├── (public)/            # Anonymous reporter routes

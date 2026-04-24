@@ -1,0 +1,97 @@
+{
+  "stepLabels": ["Concern Type", "Details", "Evidence", "Review"],
+  "header": {
+    "brand": "Sawt Safe",
+    "badge": "Anonymous & Encrypted"
+  },
+  "step1": {
+    "title": "What type of concern?",
+    "subtitle": "Select the category that best describes the issue you'd like to raise.",
+    "anonymousBadge": "Your identity remains fully anonymous throughout this process.",
+    "continue": "Continue"
+  },
+  "categories": {
+    "FRAUD": { "label": "Financial Misconduct", "desc": "Embezzlement, bribery, expense fraud, accounting irregularities" },
+    "HARASSMENT": { "label": "Harassment & Bullying", "desc": "Workplace bullying, intimidation, hostile behavior" },
+    "DISCRIMINATION": { "label": "Discrimination", "desc": "Bias based on race, gender, age, disability, religion, orientation" },
+    "DATA_MISUSE": { "label": "Data & Privacy Breach", "desc": "Unauthorized access, data leaks, privacy violations" },
+    "POLICY_VIOLATION": { "label": "Policy Violation", "desc": "Breach of internal policies, code of conduct, or procedures" },
+    "SAFETY_CONCERN": { "label": "Health & Safety", "desc": "Unsafe conditions, unreported incidents, regulatory non-compliance" },
+    "CORRUPTION": { "label": "Corruption & Bribery", "desc": "Kickbacks, conflicts of interest, improper gifts, nepotism" },
+    "ENVIRONMENTAL": { "label": "Environmental", "desc": "Pollution, illegal dumping, environmental regulatory violations" },
+    "RETALIATION": { "label": "Retaliation", "desc": "Punishment for prior reporting, whistleblower intimidation" },
+    "OTHER": { "label": "Other Concern", "desc": "Any issue not covered by the categories above" }
+  },
+  "step2": {
+    "title": "Describe the situation",
+    "subtitle": "Provide as much detail as you can. Every piece of information helps ensure a thorough review.",
+    "descriptionLabel": "What happened?",
+    "descriptionRequired": "*",
+    "descriptionPlaceholder": "Describe the situation in detail \u2014 what happened, when it occurred, where it took place, and who was involved. Include dates, times, locations, and any witnesses if possible. The more detail you provide, the more effectively we can investigate...",
+    "formatWithAI": "Format with AI",
+    "formatting": "Formatting...",
+    "aiFormattedVersion": "AI-formatted version",
+    "reviewBeforeAccepting": "Review before accepting",
+    "useThisVersion": "Use this version",
+    "keepOriginal": "Keep original",
+    "charCount": "{count}/5,000",
+    "whenLabel": "When did this happen?",
+    "datePlaceholder": "Pick up date",
+    "whereLabel": "Where did this occur?",
+    "locationPlaceholder": "Office, Department, Location",
+    "encryptedBadge": "All information is end-to-end encrypted and stored anonymously.",
+    "back": "Back",
+    "continue": "Continue"
+  },
+  "step3": {
+    "title": "Attach Supporting Evidence",
+    "subtitle": "Upload any documents, screenshots, or files that support your disclosure. This step is optional.",
+    "encryptedBadge": "Files are encrypted before leaving your device and stored securely.",
+    "back": "Back",
+    "skip": "Skip",
+    "continue": "Continue"
+  },
+  "step4": {
+    "title": "Review Your Disclosure",
+    "subtitle": "Please review the details below before submitting.",
+    "concernType": "Concern Type",
+    "description": "Description",
+    "date": "Date",
+    "location": "Location",
+    "evidence": "Evidence",
+    "noFileAttached": "No file is attached",
+    "filesAttached": "{count} file(s) attached",
+    "confirmText": "I confirm that the information provided is truthful to the best of my knowledge. I understand this submission is fully anonymous and encrypted.",
+    "backToEdit": "Back to Edit",
+    "submitSecurely": "Submit Securely",
+    "submitting": "Submitting..."
+  },
+  "success": {
+    "title": "Your Concern Has Been Received",
+    "subtitle": "Your disclosure is now being securely processed. Save your tracking ID to follow up on its progress.",
+    "trackingIdLabel": "Your Tracking ID",
+    "priority": "{level} Priority",
+    "copied": "Copied",
+    "copy": "Copy",
+    "downloadPdf": "Download Report as PDF",
+    "warningText": "Save this ID now. It is your only way to follow up on this disclosure. We do not store any identifying information.",
+    "checkStatus": "Check Status",
+    "done": "Done"
+  },
+  "validation": {
+    "categoryRequired": "Please select a category",
+    "descriptionMin": "Please provide at least 10 characters",
+    "descriptionMax": "Maximum 5 000 characters",
+    "locationMax": "Maximum 200 characters"
+  },
+  "severity": {
+    "CRITICAL": "Critical",
+    "HIGH": "High",
+    "MEDIUM": "Medium",
+    "LOW": "Low"
+  },
+  "error": {
+    "generic": "Something went wrong. Please try again.",
+    "formatFailed": "Formatting failed. Try again."
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "terminal": {
+    "header": "sawtsafe \u2014 secure channel",
+    "encrypted": "ENCRYPTED",
+    "lines": {
+      "establishing": "Establishing secure channel...",
+      "encryptionVerified": "End-to-end encryption verified",
+      "identityStripped": "Network identity stripped at gateway",
+      "zeroData": "Zero personal data collected",
+      "anonymousConnection": "Anonymous connection established",
+      "voiceMatters": "Your voice matters. Your identity stays yours.",
+      "speakFreely": "Speak freely. We guard the rest.",
+      "channelSecured": "Channel secured \u2014 256-bit encryption active",
+      "noTrace": "No account. No trace. No compromise.",
+      "trustedWorldwide": "Trusted by compliance leaders worldwide.",
+      "zeroBreaches": "Integrity monitoring: zero breaches recorded",
+      "courageContagious": "Courage is contagious. Yours starts here."
+    }
+  },
+  "dropzone": {
+    "dragOrBrowse": "Drag files here or",
+    "browse": "Browse",
+    "fileTypes": "Pdf, Image, Document, Audio or Video \u2014 up to 100MB each (max {maxFiles} files)",
+    "filesAdded": "{count} of {maxFiles} files added",
+    "notAccepted": "\"{name}\" is not an accepted file type.",
+    "tooLarge": "\"{name}\" exceeds the 100 MB limit.",
+    "maxFiles": "Maximum {maxFiles} files allowed."
+  }
+}
