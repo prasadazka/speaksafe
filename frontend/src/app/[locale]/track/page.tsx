@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,9 +14,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { trackReport } from "@/lib/api";
 import { useTranslations } from "next-intl";
 
@@ -28,11 +27,11 @@ const statusIcons: Record<string, typeof AlertCircle> = {
   CLOSED: CheckCircle2,
 };
 
-const statusColors: Record<string, string> = {
-  OPEN: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  UNDER_REVIEW: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  INVESTIGATING: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  CLOSED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+const statusDotColors: Record<string, string> = {
+  OPEN: "bg-blue-500",
+  UNDER_REVIEW: "bg-amber-500",
+  INVESTIGATING: "bg-purple-500",
+  CLOSED: "bg-[#00653E]",
 };
 
 interface TrackResult {
@@ -91,179 +90,235 @@ export default function TrackPage() {
 
   const statusKey = result?.status ?? "";
   const StatusIcon = statusIcons[statusKey] ?? AlertCircle;
-  const statusColor = statusColors[statusKey] ?? "";
   const statusIdx = result
     ? STATUS_ORDER.indexOf(result.status as (typeof STATUS_ORDER)[number])
     : -1;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
-            <span className="text-lg font-bold tracking-tight">{tc("brand")}</span>
-          </Link>
+    <div className="min-h-screen flex flex-col bg-[#F9FDFB]">
+      {/* ── Navbar ── */}
+      <header className="bg-white border-b border-[#EBEBEB]">
+        <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2">
+              <Shield className="h-6 w-6 text-[#00653E]" />
+              <span className="text-xl font-bold tracking-tight text-[#00653E]">
+                {tc("brand")}
+              </span>
+            </Link>
+            <div className="hidden sm:block w-px h-6 bg-[#D9D9D9] ms-3" />
+            <span className="hidden sm:block text-[#636363] text-lg font-semibold">
+              {t("title")}
+            </span>
+          </div>
           <Link href="/report">
-            <Button size="sm">{tc("nav.newReport")}</Button>
+            <Button className="bg-[#00653E] hover:bg-[#005232] text-white font-semibold rounded-[4px] cursor-pointer">
+              {tc("nav.newReport")}
+            </Button>
           </Link>
         </div>
       </header>
 
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 py-16">
-        <div className="text-center mb-8">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Search className="h-6 w-6 text-primary" />
+      {/* ── Main Content ── */}
+      <main className="flex-1 flex items-start justify-center px-4 py-12 lg:py-20">
+        <div className="w-full max-w-5xl flex flex-col lg:flex-row items-start gap-12 lg:gap-20">
+          {/* Left — Form Section */}
+          <div className="flex-1 w-full max-w-lg mx-auto lg:mx-0">
+            {/* Heading */}
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-12 w-12 rounded-full bg-[#00653E]/10 flex items-center justify-center">
+                  <Search className="h-6 w-6 text-[#00653E]" />
+                </div>
+              </div>
+              <h1 className="text-[32px] lg:text-[38px] font-bold text-black leading-tight">
+                {t("title")}
+              </h1>
+              <p className="mt-2 text-lg text-[#909090]">
+                {t("description")}
+              </p>
+            </div>
+
+            {/* Search Input */}
+            <div className="flex gap-3 mb-6">
+              <Input
+                value={trackingId}
+                onChange={(e) => {
+                  setTrackingId(e.target.value.toUpperCase());
+                  setError(null);
+                }}
+                placeholder={t("placeholder")}
+                className="flex-1 font-mono text-center text-lg h-[56px] rounded-[10px] border-[#BEBEBE] bg-white text-black placeholder:text-[#BEBEBE] focus:border-[#00653E] focus:ring-[#00653E]/20"
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                disabled={loading}
+              />
+              <Button
+                onClick={handleSearch}
+                className="shrink-0 px-8 h-[56px] bg-[#00653E] hover:bg-[#005232] text-white text-base font-semibold rounded-[4px] cursor-pointer"
+                disabled={loading || !trackingId.trim()}
+              >
+                {loading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 me-2" />
+                    {t("trackButton")}
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Error */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="mb-6 p-4 rounded-[10px] bg-red-50 border border-red-200 text-red-600 text-sm text-center"
+                >
+                  {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Result Card */}
+            <AnimatePresence>
+              {result && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 12 }}
+                  transition={{ type: "spring", duration: 0.5, bounce: 0.15 }}
+                >
+                  <div className="bg-white rounded-[10px] border border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)] p-6">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <p className="text-xs text-[#909090] uppercase tracking-wide">
+                          {t("trackingId")}
+                        </p>
+                        <p className="text-xl font-mono font-bold text-black">
+                          {result.tracking_id}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#EBEBEB] bg-[#F9FDFB]">
+                        <StatusIcon className="h-4 w-4 text-[#00653E]" />
+                        <span className="text-sm font-medium text-[#00653E]">
+                          {tc(`status.${statusKey}`)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Status Timeline */}
+                    <div className="space-y-0">
+                      {STATUS_ORDER.map((s, i) => {
+                        const Icon = statusIcons[s];
+                        const isActive = s === result.status;
+                        const isPast = i <= statusIdx;
+                        const dotColor = statusDotColors[s] ?? "bg-gray-300";
+
+                        return (
+                          <div key={s} className="flex items-start gap-4">
+                            {/* Timeline bar */}
+                            <div className="flex flex-col items-center">
+                              <div
+                                className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 border-2 ${
+                                  isActive
+                                    ? `${dotColor} border-current text-white`
+                                    : isPast
+                                      ? "border-[#00653E]/30 bg-[#00653E]/10 text-[#00653E]"
+                                      : "border-[#EBEBEB] bg-white text-[#BEBEBE]"
+                                }`}
+                              >
+                                <Icon className="h-4 w-4" />
+                              </div>
+                              {i < 3 && (
+                                <div
+                                  className={`w-0.5 h-8 ${isPast ? "bg-[#00653E]/25" : "bg-[#EBEBEB]"}`}
+                                />
+                              )}
+                            </div>
+                            {/* Label */}
+                            <div className="pt-1.5">
+                              <p
+                                className={`text-sm font-semibold ${
+                                  isActive
+                                    ? "text-black"
+                                    : isPast
+                                      ? "text-[#636363]"
+                                      : "text-[#BEBEBE]"
+                                }`}
+                              >
+                                {tc(`status.${s}`)}
+                              </p>
+                              {isActive && (
+                                <p className="text-xs text-[#909090] mt-0.5">
+                                  {t("currentStatus")}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Dates */}
+                    <div className="mt-6 pt-5 border-t border-[#EBEBEB] grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-[#909090]">{t("submitted")}</p>
+                        <p className="font-medium text-black flex items-center gap-1.5 mt-1">
+                          <Clock className="h-3.5 w-3.5 text-[#00653E]" />
+                          {formatDate(result.created_at)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[#909090]">{t("lastUpdated")}</p>
+                        <p className="font-medium text-black flex items-center gap-1.5 mt-1">
+                          <Clock className="h-3.5 w-3.5 text-[#00653E]" />
+                          {formatDate(result.updated_at)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <h1 className="text-2xl font-bold mb-2">{t("title")}</h1>
-          <p className="text-muted-foreground">
-            {t("description")}
+
+          {/* Right — Illustration (desktop only) */}
+          <div className="hidden lg:flex items-start justify-center flex-shrink-0 pt-8">
+            <div className="relative">
+              <Image
+                src="/images/track-illustration.svg"
+                alt="Track report illustration"
+                width={420}
+                height={440}
+                className="opacity-90 pointer-events-none select-none"
+                priority
+              />
+              {/* Magnifier accent */}
+              <Image
+                src="/images/magnifier.png"
+                alt=""
+                width={90}
+                height={90}
+                className="absolute -top-4 -start-6 opacity-70 pointer-events-none"
+                aria-hidden="true"
+              />
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* ── Footer ── */}
+      <footer className="border-t border-[#EBEBEB] bg-white py-4">
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-center">
+          <p className="text-sm text-[#909090]">
+            {tc("brand")} &mdash; {tc("footer.tagline")}
           </p>
         </div>
-
-        <div className="flex gap-3 mb-8">
-          <div className="relative flex-1 group">
-            <div className="absolute -inset-px rounded-xl bg-linear-to-r from-primary/40 via-primary/20 to-primary/40 opacity-60 group-focus-within:opacity-100 blur-[2px] transition-opacity" />
-            <Input
-              value={trackingId}
-              onChange={(e) => {
-                setTrackingId(e.target.value.toUpperCase());
-                setError(null);
-              }}
-              placeholder={t("placeholder")}
-              className="relative font-mono text-center text-lg h-14 rounded-xl border-primary/30 bg-background focus:border-primary focus:ring-primary/20"
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              disabled={loading}
-            />
-          </div>
-          <Button
-            onClick={handleSearch}
-            className="shrink-0 px-8 h-14 rounded-xl text-base font-semibold shadow-[0_0_15px_rgba(120,200,140,0.25)] hover:shadow-[0_0_25px_rgba(120,200,140,0.4)] transition-shadow"
-            disabled={loading || !trackingId.trim()}
-          >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <>
-                <Search className="h-4 w-4 mr-2" />
-                {t("trackButton")}
-              </>
-            )}
-          </Button>
-        </div>
-
-        {/* Error */}
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center"
-            >
-              {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Result */}
-        <AnimatePresence>
-          {result && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
-              transition={{ type: "spring", duration: 0.5, bounce: 0.15 }}
-            >
-              <Card className="border-primary/20 shadow-[0_0_20px_rgba(120,200,140,0.1)]">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                        {t("trackingId")}
-                      </p>
-                      <p className="text-lg font-mono font-bold">
-                        {result.tracking_id}
-                      </p>
-                    </div>
-                    <Badge className={statusColor + " border"}>
-                      <StatusIcon className="h-3.5 w-3.5 mr-1.5" />
-                      {tc(`status.${statusKey}`)}
-                    </Badge>
-                  </div>
-
-                  {/* Status Timeline */}
-                  <div className="space-y-4">
-                    {STATUS_ORDER.map((s, i) => {
-                      const Icon = statusIcons[s];
-                      const isActive = s === result.status;
-                      const isPast = i <= statusIdx;
-
-                      return (
-                        <div key={s} className="flex items-start gap-3">
-                          <div className="flex flex-col items-center">
-                            <div
-                              className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-                                isActive
-                                  ? "bg-primary text-primary-foreground"
-                                  : isPast
-                                    ? "bg-primary/20 text-primary"
-                                    : "bg-muted text-muted-foreground"
-                              }`}
-                            >
-                              <Icon className="h-4 w-4" />
-                            </div>
-                            {i < 3 && (
-                              <div
-                                className={`w-0.5 h-6 mt-1 ${isPast ? "bg-primary/30" : "bg-muted"}`}
-                              />
-                            )}
-                          </div>
-                          <div className="pt-1">
-                            <p
-                              className={`text-sm font-medium ${
-                                isActive
-                                  ? "text-foreground"
-                                  : isPast
-                                    ? "text-foreground/70"
-                                    : "text-muted-foreground"
-                              }`}
-                            >
-                              {tc(`status.${s}`)}
-                            </p>
-                            {isActive && (
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {t("currentStatus")}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-border grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">{t("submitted")}</p>
-                      <p className="font-medium flex items-center gap-1.5 mt-0.5">
-                        <Clock className="h-3.5 w-3.5" />
-                        {formatDate(result.created_at)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">{t("lastUpdated")}</p>
-                      <p className="font-medium flex items-center gap-1.5 mt-0.5">
-                        <Clock className="h-3.5 w-3.5" />
-                        {formatDate(result.updated_at)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+      </footer>
     </div>
   );
 }

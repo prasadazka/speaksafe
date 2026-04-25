@@ -276,198 +276,195 @@ export default function ReportPage() {
     > = {
       CRITICAL: {
         label: t("severity.CRITICAL"),
-        color: "text-red-400",
-        bg: "bg-red-500/10",
-        border: "border-red-500/30",
+        color: "text-red-600",
+        bg: "bg-red-50",
+        border: "border-red-200",
       },
       HIGH: {
         label: t("severity.HIGH"),
-        color: "text-orange-400",
-        bg: "bg-orange-500/10",
-        border: "border-orange-500/30",
+        color: "text-orange-600",
+        bg: "bg-orange-50",
+        border: "border-orange-200",
       },
       MEDIUM: {
         label: t("severity.MEDIUM"),
-        color: "text-yellow-400",
-        bg: "bg-yellow-500/10",
-        border: "border-yellow-500/30",
+        color: "text-amber-600",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
       },
       LOW: {
         label: t("severity.LOW"),
-        color: "text-emerald-400",
-        bg: "bg-emerald-500/10",
-        border: "border-emerald-500/30",
+        color: "text-[#00653E]",
+        bg: "bg-[#00653E]/5",
+        border: "border-[#00653E]/20",
       },
     };
     const sev = severityConfig[result.severity] ?? severityConfig.MEDIUM;
 
     return (
-      <div className="min-h-screen flex flex-col relative overflow-hidden">
-        <BackgroundDecoration />
-        <Header tc={tc} t={t} />
-        <main className="flex-1 flex items-center justify-center p-4 relative z-10">
+      <div className="min-h-screen flex flex-col bg-[#F9FDFB]">
+        {/* Navbar */}
+        <header className="bg-white border-b border-[#EBEBEB]">
+          <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center">
+            <Link href="/" className="flex items-center gap-2">
+              <Shield className="h-6 w-6 text-[#00653E]" />
+              <span className="text-xl font-bold tracking-tight text-[#00653E]">
+                {tc("brand")}
+              </span>
+            </Link>
+          </div>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center p-4">
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="w-full max-w-lg"
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="w-full max-w-[520px]"
           >
-            <Card className="bg-card/60 backdrop-blur-md border-border/40 shadow-2xl">
-              <CardContent className="pt-8 pb-8">
-                {/* Animated checkmark */}
-                <div className="relative h-20 w-20 mx-auto mb-6">
+            <div className="bg-white rounded-[16px] border border-[#EBEBEB] shadow-[0_4px_20px_rgba(110,110,110,0.08)] px-8 py-10">
+              {/* Animated checkmark */}
+              <div className="relative h-[80px] w-[80px] mx-auto mb-6">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15,
+                    delay: 0.1,
+                  }}
+                  className="absolute inset-0 rounded-full bg-[#00653E]/10"
+                />
+                <svg
+                  viewBox="0 0 40 40"
+                  className="absolute inset-0 h-full w-full"
+                >
+                  <circle
+                    cx="20"
+                    cy="20"
+                    r="18"
+                    fill="none"
+                    stroke="#00653E"
+                    strokeOpacity="0.15"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M12 20 L18 26 L28 14"
+                    fill="none"
+                    stroke="#00653E"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="animate-checkmark-draw"
+                  />
+                </svg>
+              </div>
+
+              <h1 className="text-[24px] md:text-[28px] font-bold text-black text-center leading-tight">
+                {t("success.title")}
+              </h1>
+              <p className="text-[#909090] text-base text-center mt-2 mb-8 leading-relaxed">
+                {t("success.subtitle")}
+              </p>
+
+              {/* Tracking ID card */}
+              <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="rounded-[12px] bg-[#00653E]/[0.04] border border-[#00653E]/15 p-5 mb-4"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs text-[#00653E] font-bold uppercase tracking-wider">
+                    {t("success.trackingIdLabel")}
+                  </p>
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 200,
-                      damping: 15,
-                      delay: 0.1,
-                    }}
-                    className="absolute inset-0 rounded-full bg-primary/10 animate-glow-pulse"
-                  />
-                  <svg
-                    viewBox="0 0 40 40"
-                    className="absolute inset-0 h-full w-full"
+                    transition={{ delay: 0.6, type: "spring" }}
+                    className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${sev.bg} ${sev.color} ${sev.border} border`}
                   >
-                    <circle
-                      cx="20"
-                      cy="20"
-                      r="18"
-                      fill="none"
-                      stroke="oklch(0.72 0.19 160 / 0.2)"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M12 20 L18 26 L28 14"
-                      fill="none"
-                      stroke="oklch(0.72 0.19 160)"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="animate-checkmark-draw"
-                    />
-                  </svg>
-                  {/* Particles */}
-                  {[...Array(6)].map((_, i) => {
-                    const angle = (i * 60 * Math.PI) / 180;
-                    const tx = Math.cos(angle) * 40;
-                    const ty = Math.sin(angle) * 40;
-                    return (
-                      <motion.div
-                        key={i}
-                        initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
-                        animate={{ scale: 1, x: tx, y: ty, opacity: 0 }}
-                        transition={{ duration: 0.8, delay: 0.4 + i * 0.05 }}
-                        className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -ml-0.75 -mt-0.75 rounded-full bg-primary"
-                      />
-                    );
-                  })}
+                    {t("success.priority", { level: sev.label })}
+                  </motion.div>
                 </div>
-
-                <h1 className="text-2xl font-bold mb-2 text-center">
-                  {t("success.title")}
-                </h1>
-                <p className="text-muted-foreground mb-6 text-center">
-                  {t("success.subtitle")}
-                </p>
-
-                {/* Tracking ID card */}
-                <motion.div
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="rounded-xl bg-primary/[0.04] border border-primary/20 p-5 mb-4"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs text-primary/70 font-semibold uppercase tracking-wider">
-                      {t("success.trackingIdLabel")}
-                    </p>
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.8, type: "spring" }}
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${sev.bg} ${sev.color} ${sev.border} border`}
+                <div className="flex items-center gap-3">
+                  <span className="text-[32px] md:text-[36px] font-mono font-bold text-black tracking-wider flex-1">
+                    {result.trackingId}
+                  </span>
+                  <motion.div whileTap={{ scale: 0.92 }}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={copyId}
+                      className={`gap-1.5 rounded-[8px] border-[#EBEBEB] cursor-pointer transition-all duration-200 ${
+                        copied
+                          ? "border-[#00653E] bg-[#00653E]/5 text-[#00653E]"
+                          : "text-black hover:bg-gray-50"
+                      }`}
                     >
-                      {t("success.priority", { level: sev.label })}
-                    </motion.div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl font-mono font-bold text-primary tracking-wider flex-1">
-                      {result.trackingId}
-                    </span>
-                    <motion.div whileTap={{ scale: 0.92 }}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={copyId}
-                        className={`gap-1.5 transition-all duration-200 ${
-                          copied
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-primary/30 hover:bg-primary/10"
-                        }`}
-                      >
-                        {copied ? (
-                          <>
-                            <ClipboardCheck className="h-3.5 w-3.5" />
-                            <span className="text-xs">{t("success.copied")}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3.5 w-3.5" />
-                            <span className="text-xs">{t("success.copy")}</span>
-                          </>
-                        )}
-                      </Button>
-                    </motion.div>
-                  </div>
-                </motion.div>
+                      {copied ? (
+                        <>
+                          <ClipboardCheck className="h-3.5 w-3.5" />
+                          <span className="text-xs">{t("success.copied")}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" />
+                          <span className="text-xs">{t("success.copy")}</span>
+                        </>
+                      )}
+                    </Button>
+                  </motion.div>
+                </div>
+              </motion.div>
 
-                {/* Download PDF */}
-                <motion.div
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.8 }}
+              {/* Download PDF */}
+              <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.6 }}
+              >
+                <Button
+                  variant="outline"
+                  className="w-full h-[48px] mb-4 gap-2 rounded-[10px] border-[#EBEBEB] bg-white text-black hover:bg-gray-50 cursor-pointer"
+                  onClick={() => generateReportPdf(result)}
                 >
+                  <Download className="h-4 w-4 text-[#00653E]" />
+                  {t("success.downloadPdf")}
+                </Button>
+              </motion.div>
+
+              {/* Warning */}
+              <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className="bg-red-50 border border-red-200 rounded-[12px] p-4 mb-8 flex items-start gap-3 text-start"
+              >
+                <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
+                <p className="text-sm text-red-700 leading-relaxed">
+                  {t("success.warningText")}
+                </p>
+              </motion.div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Link href="/track" className="flex-1">
                   <Button
                     variant="outline"
-                    className="w-full mb-4 gap-2 border-border/40 bg-card/40 hover:bg-card/60 hover:border-primary/30 transition-all"
-                    onClick={() => generateReportPdf(result)}
+                    className="w-full h-[48px] rounded-[10px] border-[#EBEBEB] text-black font-semibold hover:bg-gray-50 cursor-pointer"
                   >
-                    <Download className="h-4 w-4 text-primary/70" />
-                    {t("success.downloadPdf")}
+                    {t("success.checkStatus")}
                   </Button>
-                </motion.div>
-
-                {/* Warning */}
-                <motion.div
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 1.0 }}
-                  className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mb-6 flex items-start gap-2 text-left"
-                >
-                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                  <p className="text-sm text-destructive">
-                    {t("success.warningText")}
-                  </p>
-                </motion.div>
-
-                {/* Actions */}
-                <div className="flex gap-3">
-                  <Link href="/track" className="flex-1">
-                    <Button variant="outline" className="w-full">
-                      {t("success.checkStatus")}
-                    </Button>
-                  </Link>
-                  <Link href="/" className="flex-1">
-                    <Button className="w-full shadow-lg shadow-primary/20">
-                      {t("success.done")}
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+                </Link>
+                <Link href="/" className="flex-1">
+                  <Button className="w-full h-[48px] rounded-[10px] bg-[#00653E] hover:bg-[#005232] text-white font-semibold cursor-pointer">
+                    {t("success.done")}
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </motion.div>
         </main>
       </div>
