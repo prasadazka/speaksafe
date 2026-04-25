@@ -9,6 +9,7 @@ import {
   ShieldOff,
   MoreHorizontal,
   UserCog,
+  KeyRound,
   Power,
   Trash2,
   ChevronLeft,
@@ -29,6 +30,7 @@ import { AdminHeader } from "@/components/admin/admin-header";
 import { AddUserDialog } from "@/components/admin/add-user-dialog";
 import { ChangeRoleDialog } from "@/components/admin/change-role-dialog";
 import { DeleteUserDialog } from "@/components/admin/delete-user-dialog";
+import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import {
   listUsers,
@@ -69,6 +71,7 @@ export default function AdminUsersPage() {
   // Dialogs
   const [addOpen, setAddOpen] = useState(false);
   const [roleTarget, setRoleTarget] = useState<AdminProfile | null>(null);
+  const [resetTarget, setResetTarget] = useState<AdminProfile | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminProfile | null>(null);
 
   // ADMIN-only guard
@@ -252,6 +255,7 @@ export default function AdminUsersPage() {
                             target={u}
                             t={t}
                             onChangeRole={() => setRoleTarget(u)}
+                            onResetPassword={() => setResetTarget(u)}
                             onToggleActive={() => handleToggleActive(u)}
                             onDelete={() => setDeleteTarget(u)}
                           />
@@ -295,6 +299,7 @@ export default function AdminUsersPage() {
                         target={u}
                         t={t}
                         onChangeRole={() => setRoleTarget(u)}
+                        onResetPassword={() => setResetTarget(u)}
                         onToggleActive={() => handleToggleActive(u)}
                         onDelete={() => setDeleteTarget(u)}
                       />
@@ -389,6 +394,12 @@ export default function AdminUsersPage() {
         targetUser={roleTarget}
         onSuccess={fetchUsers}
       />
+      <ResetPasswordDialog
+        open={!!resetTarget}
+        onOpenChange={(v) => { if (!v) setResetTarget(null); }}
+        targetUser={resetTarget}
+        onSuccess={fetchUsers}
+      />
       <DeleteUserDialog
         open={!!deleteTarget}
         onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
@@ -405,12 +416,14 @@ function UserActionsDropdown({
   target,
   t,
   onChangeRole,
+  onResetPassword,
   onToggleActive,
   onDelete,
 }: {
   target: AdminProfile;
   t: (key: string) => string;
   onChangeRole: () => void;
+  onResetPassword: () => void;
   onToggleActive: () => void;
   onDelete: () => void;
 }) {
@@ -426,6 +439,10 @@ function UserActionsDropdown({
         <DropdownMenuItem onClick={onChangeRole} className="gap-2 cursor-pointer">
           <UserCog className="h-4 w-4" />
           {t("users.changeRole")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onResetPassword} className="gap-2 cursor-pointer">
+          <KeyRound className="h-4 w-4" />
+          {t("users.resetPassword")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onToggleActive} className="gap-2 cursor-pointer">
           <Power className="h-4 w-4" />

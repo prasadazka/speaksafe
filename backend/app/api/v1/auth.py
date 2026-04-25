@@ -19,6 +19,7 @@ from app.schemas.auth import (
     AdminUserListItem,
     MFASetupResponse,
     MFAVerify,
+    PasswordReset,
     RoleUpdate,
     TokenResponse,
 )
@@ -278,3 +279,27 @@ async def delete_user(
     await db.commit()
 
     return ApiResponse(data={"message": "User deleted"})
+
+
+@router.patch("/users/{user_id}/password", response_model=ApiResponse)
+async def reset_user_password(
+    user_id: uuid.UUID,
+    payload: PasswordReset,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+) -> ApiResponse:
+    result = await db.execute(select(AdminUser).where(AdminUser.id == user_id))
+    target = result.scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    target.password_hash = hash_password(payload.new_password)
+
+    await log_action(
+        db, AuditAction.ADMIN_PASSWORD_RESET, "admin_user", str(user_id),
+        actor=admin,
+        metadata={"email": target.email},
+    )
+    await db.commit()
+
+    return ApiResponse(data={"message": "Password reset successfully"})

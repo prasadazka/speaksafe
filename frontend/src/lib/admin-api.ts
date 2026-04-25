@@ -385,3 +385,16 @@ export async function deleteUser(
   });
   return handleResponse(res);
 }
+
+export async function resetUserPassword(
+  token: string,
+  userId: string,
+  newPassword: string,
+): Promise<ApiResponse<{ message: string }>> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/users/${userId}/password`, {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify({ new_password: newPassword }),
+  });
+  return handleResponse(res);
+}
