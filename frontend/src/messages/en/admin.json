@@ -92,6 +92,7 @@
   "header": {
     "userMenu": "User menu",
     "securitySettings": "Security Settings",
+    "changePassword": "Change Password",
     "manageUsers": "Manage Users",
     "logout": "Logout"
   },
@@ -169,5 +170,20 @@
     "deleteFailed": "Failed to delete user",
     "previousPage": "Previous page",
     "nextPage": "Next page"
+  },
+  "changePassword": {
+    "title": "Change Password",
+    "subtitle": "Enter your current password and choose a new one",
+    "currentPassword": "Current Password",
+    "currentPasswordPlaceholder": "Enter current password",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "Minimum 8 characters",
+    "confirmPassword": "Confirm New Password",
+    "confirmPasswordPlaceholder": "Re-enter new password",
+    "minLength": "Password must be at least 8 characters",
+    "mismatch": "Passwords do not match",
+    "submit": "Update Password",
+    "success": "Password changed successfully",
+    "failed": "Failed to change password"
   }
 }

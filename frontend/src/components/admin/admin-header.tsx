@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Shield, LogOut, KeyRound, Users, ChevronDown } from "lucide-react";
+import { Shield, LogOut, KeyRound, Lock, Users, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/auth-context";
 import { MFASetupDialog } from "./mfa-setup-dialog";
+import { ChangePasswordDialog } from "./change-password-dialog";
 import { useTranslations } from "next-intl";
 
 interface AdminHeaderProps {
@@ -32,6 +33,7 @@ export function AdminHeader({ title }: AdminHeaderProps) {
   const tc = useTranslations("common");
   const { user, logout, hasRole } = useAuth();
   const [mfaOpen, setMfaOpen] = useState(false);
+  const [changePwOpen, setChangePwOpen] = useState(false);
 
   if (!user) return null;
 
@@ -88,6 +90,14 @@ export function AdminHeader({ title }: AdminHeaderProps) {
                 {t("header.securitySettings")}
               </DropdownMenuItem>
 
+              <DropdownMenuItem
+                onClick={() => setChangePwOpen(true)}
+                className="gap-2.5 px-3 py-2.5 text-[#636363] cursor-pointer"
+              >
+                <Lock className="h-4 w-4" />
+                {t("header.changePassword")}
+              </DropdownMenuItem>
+
               {hasRole("ADMIN") && (
                 <DropdownMenuItem
                   onClick={() => window.location.href = "/admin/users"}
@@ -113,6 +123,7 @@ export function AdminHeader({ title }: AdminHeaderProps) {
       </header>
 
       <MFASetupDialog open={mfaOpen} onOpenChange={setMfaOpen} />
+      <ChangePasswordDialog open={changePwOpen} onOpenChange={setChangePwOpen} />
     </>
   );
 }

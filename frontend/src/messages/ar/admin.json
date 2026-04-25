@@ -92,6 +92,7 @@
   "header": {
     "userMenu": "قائمة المستخدم",
     "securitySettings": "إعدادات الأمان",
+    "changePassword": "تغيير كلمة المرور",
     "manageUsers": "إدارة المستخدمين",
     "logout": "تسجيل الخروج"
   },
@@ -169,5 +170,20 @@
     "deleteFailed": "فشل في حذف المستخدم",
     "previousPage": "الصفحة السابقة",
     "nextPage": "الصفحة التالية"
+  },
+  "changePassword": {
+    "title": "تغيير كلمة المرور",
+    "subtitle": "أدخل كلمة المرور الحالية واختر كلمة مرور جديدة",
+    "currentPassword": "كلمة المرور الحالية",
+    "currentPasswordPlaceholder": "أدخل كلمة المرور الحالية",
+    "newPassword": "كلمة المرور الجديدة",
+    "newPasswordPlaceholder": "8 أحرف على الأقل",
+    "confirmPassword": "تأكيد كلمة المرور الجديدة",
+    "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور الجديدة",
+    "minLength": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+    "mismatch": "كلمتا المرور غير متطابقتين",
+    "submit": "تحديث كلمة المرور",
+    "success": "تم تغيير كلمة المرور بنجاح",
+    "failed": "فشل في تغيير كلمة المرور"
   }
 }

@@ -84,13 +84,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Login successful
       setMfaState(null);
-      const t = (data as { access_token: string }).access_token;
-      localStorage.setItem(TOKEN_KEY, t);
-      setToken(t);
+      const loginData = data as { access_token: string; user?: AdminProfile };
+      localStorage.setItem(TOKEN_KEY, loginData.access_token);
+      setToken(loginData.access_token);
 
-      const profile = await getMe(t);
-      if (profile.success && profile.data) {
-        setUser(profile.data as AdminProfile);
+      if (loginData.user) {
+        setUser(loginData.user);
+      } else {
+        const profile = await getMe(loginData.access_token);
+        if (profile.success && profile.data) {
+          setUser(profile.data as AdminProfile);
+        }
       }
       router.push("/admin/dashboard");
     },

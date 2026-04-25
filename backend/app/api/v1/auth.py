@@ -7,7 +7,7 @@ from sqlalchemy import func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, require_role
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import create_access_token, hash_password, verify_password, verify_password_async
 from app.db.session import get_db
 from app.models.admin_user import AdminRole, AdminUser
 from app.models.audit_log import AuditAction
@@ -19,6 +19,7 @@ from app.schemas.auth import (
     AdminUserListItem,
     MFASetupResponse,
     MFAVerify,
+    PasswordChange,
     PasswordReset,
     RoleUpdate,
     TokenResponse,
@@ -72,7 +73,7 @@ async def login(
     )
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(payload.password, user.password_hash):
+    if not user or not await verify_password_async(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # MFA check
@@ -93,7 +94,10 @@ async def login(
 
     token = create_access_token(user.id)
     return ApiResponse(
-        data=TokenResponse(access_token=token).model_dump(),
+        data={
+            **TokenResponse(access_token=token).model_dump(),
+            "user": AdminProfile.model_validate(user).model_dump(mode="json"),
+        },
     )
 
 
@@ -105,6 +109,28 @@ async def get_me(
     return ApiResponse(
         data=AdminProfile.model_validate(user).model_dump(mode="json"),
     )
+
+
+# ── Change own password ──
+@router.patch("/me/password", response_model=ApiResponse)
+async def change_password(
+    payload: PasswordChange,
+    db: AsyncSession = Depends(get_db),
+    user: AdminUser = Depends(get_current_user),
+) -> ApiResponse:
+    if not await verify_password_async(payload.current_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    user.password_hash = hash_password(payload.new_password)
+
+    await log_action(
+        db, AuditAction.ADMIN_PASSWORD_CHANGED, "admin_user", str(user.id),
+        actor=user,
+        metadata={"email": user.email},
+    )
+    await db.commit()
+
+    return ApiResponse(data={"message": "Password changed successfully"})
 
 
 # ── MFA: Generate setup secret + QR URL ──

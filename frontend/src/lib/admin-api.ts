@@ -287,6 +287,21 @@ export async function getAuditLogs(
   return handleResponse(res);
 }
 
+/* ── Change Own Password ── */
+
+export async function changePassword(
+  token: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<ApiResponse<{ message: string }>> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/me/password`, {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+  return handleResponse(res);
+}
+
 /* ── MFA Management ── */
 
 export async function mfaSetup(

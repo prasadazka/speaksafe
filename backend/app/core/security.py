@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -15,6 +16,12 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
+
+
+async def verify_password_async(plain: str, hashed: str) -> bool:
+    """Run Argon2 verification in a thread to avoid blocking the event loop."""
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, verify_password, plain, hashed)
 
 
 def create_access_token(user_id: uuid.UUID) -> str:
