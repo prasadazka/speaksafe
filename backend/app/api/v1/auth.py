@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 
 import pyotp
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,6 +28,15 @@ from app.schemas.report import ApiResponse
 from app.services.audit import log_action
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
+
+
+def _get_client_ip(request: Request) -> str | None:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    if request.client:
+        return request.client.host
+    return None
 
 
 # ── Register ──
@@ -66,6 +75,7 @@ async def register(
 @router.post("/login", response_model=ApiResponse)
 async def login(
     payload: AdminLogin,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     result = await db.execute(
@@ -89,6 +99,7 @@ async def login(
     user.last_login_at = datetime.now(timezone.utc)
     await log_action(
         db, AuditAction.ADMIN_LOGIN, "admin_user", str(user.id), actor=user,
+        ip_address=_get_client_ip(request),
     )
     await db.commit()
 

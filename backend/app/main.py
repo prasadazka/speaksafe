@@ -17,8 +17,13 @@ from app.db.session import engine
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    async with engine.connect() as conn:
+    async with engine.begin() as conn:
         await conn.execute(text("SELECT 1"))
+        # Add ip_address column to audit_logs if missing
+        await conn.execute(text(
+            "ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS"
+            " ip_address VARCHAR(45)"
+        ))
     yield
     await engine.dispose()
 

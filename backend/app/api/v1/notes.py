@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,6 +33,7 @@ async def _get_report(report_id: uuid.UUID, db: AsyncSession) -> Report:
 async def add_note(
     report_id: uuid.UUID,
     payload: NoteCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
@@ -48,9 +49,13 @@ async def add_note(
     report.notes_count += 1
     await db.flush()
 
+    forwarded = request.headers.get("x-forwarded-for")
+    ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else None)
+
     await log_action(
         db, AuditAction.NOTE_ADDED, "case_note", str(note.id),
         actor=user, metadata={"report_id": str(report_id)},
+        ip_address=ip,
     )
     await db.commit()
     await db.refresh(note)

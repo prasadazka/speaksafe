@@ -77,7 +77,9 @@ export type AuditAction =
   | "ADMIN_ROLE_CHANGED"
   | "ADMIN_DEACTIVATED"
   | "ADMIN_ACTIVATED"
-  | "ADMIN_DELETED";
+  | "ADMIN_DELETED"
+  | "ADMIN_PASSWORD_RESET"
+  | "ADMIN_PASSWORD_CHANGED";
 
 export interface MFASetupResponse {
   secret: string;
@@ -91,6 +93,7 @@ export interface AuditLogItem {
   action: AuditAction;
   resource_type: string;
   resource_id: string;
+  ip_address: string | null;
   metadata_: Record<string, unknown> | null;
   created_at: string;
 }
@@ -285,6 +288,19 @@ export async function getAuditLogs(
     { headers: authHeaders(token) },
   );
   return handleResponse(res);
+}
+
+/* ── Case Timeline ── */
+
+export async function getCaseTimeline(
+  token: string,
+  reportId: string,
+): Promise<ApiResponse<AuditLogItem[]>> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/reports/${reportId}/timeline`,
+    { headers: authHeaders(token) },
+  );
+  return handleResponse<AuditLogItem[]>(res);
 }
 
 /* ── Change Own Password ── */

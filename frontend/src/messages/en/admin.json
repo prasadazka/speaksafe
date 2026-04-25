@@ -185,5 +185,25 @@
     "submit": "Update Password",
     "success": "Password changed successfully",
     "failed": "Failed to change password"
+  },
+  "timeline": {
+    "title": "Timeline",
+    "activityLog": "Activity Log",
+    "noActivity": "No activity recorded for this case",
+    "reportCreated": "Report submitted",
+    "statusChanged": "Status changed from {from} to {to}",
+    "severityChanged": "Severity changed from {from} to {to}",
+    "reportDeleted": "Report deleted",
+    "noteAdded": "Note added",
+    "evidenceUploaded": "Evidence file uploaded",
+    "evidenceDeleted": "Evidence file removed"
+  },
+  "statusChange": {
+    "confirmStatusTitle": "Confirm Status Change",
+    "confirmStatusDesc": "Are you sure you want to change the case status?",
+    "confirmSeverityTitle": "Confirm Severity Change",
+    "confirmSeverityDesc": "Are you sure you want to change the case severity?",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
   }
 }

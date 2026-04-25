@@ -13,6 +13,7 @@ class AuditLogItem(BaseModel):
     action: AuditAction
     resource_type: str
     resource_id: str
+    ip_address: str | None
     metadata_: dict | None
     created_at: datetime
 

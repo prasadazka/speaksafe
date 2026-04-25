@@ -185,5 +185,25 @@
     "submit": "تحديث كلمة المرور",
     "success": "تم تغيير كلمة المرور بنجاح",
     "failed": "فشل في تغيير كلمة المرور"
+  },
+  "timeline": {
+    "title": "الجدول الزمني",
+    "activityLog": "سجل النشاط",
+    "noActivity": "لا يوجد نشاط مسجل لهذه القضية",
+    "reportCreated": "تم تقديم البلاغ",
+    "statusChanged": "تم تغيير الحالة من {from} إلى {to}",
+    "severityChanged": "تم تغيير الخطورة من {from} إلى {to}",
+    "reportDeleted": "تم حذف البلاغ",
+    "noteAdded": "تمت إضافة ملاحظة",
+    "evidenceUploaded": "تم رفع ملف أدلة",
+    "evidenceDeleted": "تم حذف ملف أدلة"
+  },
+  "statusChange": {
+    "confirmStatusTitle": "تأكيد تغيير الحالة",
+    "confirmStatusDesc": "هل أنت متأكد من تغيير حالة القضية؟",
+    "confirmSeverityTitle": "تأكيد تغيير الخطورة",
+    "confirmSeverityDesc": "هل أنت متأكد من تغيير خطورة القضية؟",
+    "confirm": "تأكيد",
+    "cancel": "إلغاء"
   }
 }

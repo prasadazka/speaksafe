@@ -13,6 +13,12 @@ import {
   Send,
   Loader2,
   Trash2,
+  History,
+  Globe,
+  ArrowRight,
+  Plus,
+  ShieldAlert,
+  Trash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminHeader } from "@/components/admin/admin-header";
+import { StatusChangeDialog } from "@/components/admin/status-change-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getReport,
@@ -34,10 +41,13 @@ import {
   updateReportStatus,
   updateReportSeverity,
   deleteReport,
+  getCaseTimeline,
   type ReportDetail,
   type NoteItem,
   type ReportStatus,
   type Severity,
+  type AuditLogItem,
+  type AuditAction,
 } from "@/lib/admin-api";
 import { useTranslations } from "next-intl";
 
@@ -64,6 +74,17 @@ function formatDateTime(iso: string) {
   });
 }
 
+function formatFullDateTime(iso: string) {
+  return new Date(iso).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -72,6 +93,20 @@ function getInitials(name: string) {
     .toUpperCase()
     .slice(0, 2);
 }
+
+/* Timeline event icon + color mapping */
+const timelineConfig: Record<
+  string,
+  { icon: typeof FileText; color: string; bgColor: string }
+> = {
+  REPORT_CREATED: { icon: Plus, color: "text-blue-600", bgColor: "bg-blue-100" },
+  REPORT_STATUS_UPDATED: { icon: ArrowRight, color: "text-amber-600", bgColor: "bg-amber-100" },
+  REPORT_SEVERITY_UPDATED: { icon: ShieldAlert, color: "text-orange-600", bgColor: "bg-orange-100" },
+  REPORT_DELETED: { icon: Trash, color: "text-red-600", bgColor: "bg-red-100" },
+  NOTE_ADDED: { icon: MessageSquare, color: "text-[#00653E]", bgColor: "bg-emerald-100" },
+  EVIDENCE_UPLOADED: { icon: Paperclip, color: "text-purple-600", bgColor: "bg-purple-100" },
+  EVIDENCE_DELETED: { icon: Trash, color: "text-red-600", bgColor: "bg-red-100" },
+};
 
 export default function CaseDetailPage() {
   const t = useTranslations("admin");
@@ -84,7 +119,9 @@ export default function CaseDetailPage() {
 
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [notes, setNotes] = useState<NoteItem[]>([]);
+  const [timeline, setTimeline] = useState<AuditLogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [timelineLoading, setTimelineLoading] = useState(false);
   const [noteContent, setNoteContent] = useState("");
   const [addingNote, setAddingNote] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -92,6 +129,14 @@ export default function CaseDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /* Confirmation dialog state */
+  const [statusDialog, setStatusDialog] = useState<{
+    open: boolean;
+    type: "status" | "severity";
+    current: string;
+    next: string;
+  }>({ open: false, type: "status", current: "", next: "" });
 
   /* Auth guard */
   useEffect(() => {
@@ -139,36 +184,65 @@ export default function CaseDetailPage() {
     fetchNotes();
   }, [fetchNotes]);
 
-  /* Actions */
-  const handleStatusChange = async (newStatus: ReportStatus) => {
+  /* Fetch timeline */
+  const fetchTimeline = useCallback(async () => {
     if (!token || !reportId) return;
-    setUpdatingStatus(true);
+    setTimelineLoading(true);
     try {
-      const res = await updateReportStatus(token, reportId, newStatus);
+      const res = await getCaseTimeline(token, reportId);
       if (res.success && res.data) {
-        setReport(res.data as ReportDetail);
+        setTimeline(res.data as AuditLogItem[]);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("caseDetail.failedToUpdate"));
+    } catch {
+      /* ignore */
     } finally {
-      setUpdatingStatus(false);
+      setTimelineLoading(false);
     }
+  }, [token, reportId]);
+
+  useEffect(() => {
+    fetchTimeline();
+  }, [fetchTimeline]);
+
+  /* Actions with confirmation */
+  const openStatusConfirm = (newStatus: ReportStatus) => {
+    if (!report || report.status === newStatus) return;
+    setStatusDialog({ open: true, type: "status", current: report.status, next: newStatus });
   };
 
-  const handleSeverityChange = async (newSeverity: Severity) => {
+  const openSeverityConfirm = (newSeverity: Severity) => {
+    if (!report || report.severity === newSeverity) return;
+    setStatusDialog({ open: true, type: "severity", current: report.severity, next: newSeverity });
+  };
+
+  const handleConfirmedChange = async () => {
     if (!token || !reportId) return;
-    setUpdatingSeverity(true);
-    try {
-      const res = await updateReportSeverity(token, reportId, newSeverity);
-      if (res.success && res.data) {
-        setReport(res.data as ReportDetail);
+    if (statusDialog.type === "status") {
+      setUpdatingStatus(true);
+      try {
+        const res = await updateReportStatus(token, reportId, statusDialog.next as ReportStatus);
+        if (res.success && res.data) {
+          setReport(res.data as ReportDetail);
+          await fetchTimeline();
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t("caseDetail.failedToUpdate"));
+      } finally {
+        setUpdatingStatus(false);
       }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : t("caseDetail.failedToUpdateSeverity"),
-      );
-    } finally {
-      setUpdatingSeverity(false);
+    } else {
+      setUpdatingSeverity(true);
+      try {
+        const res = await updateReportSeverity(token, reportId, statusDialog.next as Severity);
+        if (res.success && res.data) {
+          setReport(res.data as ReportDetail);
+          await fetchTimeline();
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t("caseDetail.failedToUpdateSeverity"));
+      } finally {
+        setUpdatingSeverity(false);
+      }
     }
   };
 
@@ -181,6 +255,7 @@ export default function CaseDetailPage() {
         setNoteContent("");
         await fetchNotes();
         await fetchReport();
+        await fetchTimeline();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t("caseDetail.failedToAddNote"));
@@ -200,6 +275,36 @@ export default function CaseDetailPage() {
       setDeleting(false);
     }
   };
+
+  /* Timeline event description */
+  function getTimelineDescription(entry: AuditLogItem): string {
+    const meta = entry.metadata_ ?? {};
+    const action = entry.action as AuditAction;
+    switch (action) {
+      case "REPORT_CREATED":
+        return t("timeline.reportCreated");
+      case "REPORT_STATUS_UPDATED":
+        return t("timeline.statusChanged", {
+          from: tc(`status.${meta.old ?? "OPEN"}`),
+          to: tc(`status.${meta.new ?? "OPEN"}`),
+        });
+      case "REPORT_SEVERITY_UPDATED":
+        return t("timeline.severityChanged", {
+          from: tc(`severity.${meta.old ?? "LOW"}`),
+          to: tc(`severity.${meta.new ?? "LOW"}`),
+        });
+      case "REPORT_DELETED":
+        return t("timeline.reportDeleted");
+      case "NOTE_ADDED":
+        return t("timeline.noteAdded");
+      case "EVIDENCE_UPLOADED":
+        return t("timeline.evidenceUploaded");
+      case "EVIDENCE_DELETED":
+        return t("timeline.evidenceDeleted");
+      default:
+        return action.replace(/_/g, " ");
+    }
+  }
 
   if (isLoading || !user) {
     return (
@@ -308,36 +413,44 @@ export default function CaseDetailPage() {
               </span>
             </div>
           </div>
+
+          {/* Status & Severity dropdowns with confirmation */}
           {!hasRole("VIEWER") && (
             <div className="flex gap-2">
-              <select
-                aria-label={t("caseDetail.changeStatus")}
-                className="h-9 rounded-lg border border-[#EBEBEB] bg-white px-3 text-sm text-[#636363] cursor-pointer"
-                value={report.status}
-                disabled={updatingStatus}
-                onChange={(e) =>
-                  handleStatusChange(e.target.value as ReportStatus)
-                }
-              >
-                <option value="OPEN">{tc("status.OPEN")}</option>
-                <option value="UNDER_REVIEW">{tc("status.UNDER_REVIEW")}</option>
-                <option value="INVESTIGATING">{tc("status.INVESTIGATING")}</option>
-                <option value="CLOSED">{tc("status.CLOSED")}</option>
-              </select>
-              <select
-                aria-label={t("caseDetail.changeSeverity")}
-                className="h-9 rounded-lg border border-[#EBEBEB] bg-white px-3 text-sm text-[#636363] cursor-pointer"
-                value={report.severity}
-                disabled={updatingSeverity}
-                onChange={(e) =>
-                  handleSeverityChange(e.target.value as Severity)
-                }
-              >
-                <option value="LOW">{tc("severity.LOW")}</option>
-                <option value="MEDIUM">{tc("severity.MEDIUM")}</option>
-                <option value="HIGH">{tc("severity.HIGH")}</option>
-                <option value="CRITICAL">{tc("severity.CRITICAL")}</option>
-              </select>
+              <div className="relative">
+                <label className="block text-[10px] font-medium text-[#909090] mb-1 uppercase tracking-wider">
+                  {t("caseDetail.statusLabel")}
+                </label>
+                <select
+                  aria-label={t("caseDetail.changeStatus")}
+                  className="h-9 rounded-lg border border-[#EBEBEB] bg-white px-3 pe-8 text-sm text-[#636363] cursor-pointer focus:ring-2 focus:ring-[#00653E]/20 focus:border-[#00653E] outline-none transition-colors"
+                  value={report.status}
+                  disabled={updatingStatus}
+                  onChange={(e) => openStatusConfirm(e.target.value as ReportStatus)}
+                >
+                  <option value="OPEN">{tc("status.OPEN")}</option>
+                  <option value="UNDER_REVIEW">{tc("status.UNDER_REVIEW")}</option>
+                  <option value="INVESTIGATING">{tc("status.INVESTIGATING")}</option>
+                  <option value="CLOSED">{tc("status.CLOSED")}</option>
+                </select>
+              </div>
+              <div className="relative">
+                <label className="block text-[10px] font-medium text-[#909090] mb-1 uppercase tracking-wider">
+                  {t("caseDetail.severityLabel")}
+                </label>
+                <select
+                  aria-label={t("caseDetail.changeSeverity")}
+                  className="h-9 rounded-lg border border-[#EBEBEB] bg-white px-3 pe-8 text-sm text-[#636363] cursor-pointer focus:ring-2 focus:ring-[#00653E]/20 focus:border-[#00653E] outline-none transition-colors"
+                  value={report.severity}
+                  disabled={updatingSeverity}
+                  onChange={(e) => openSeverityConfirm(e.target.value as Severity)}
+                >
+                  <option value="LOW">{tc("severity.LOW")}</option>
+                  <option value="MEDIUM">{tc("severity.MEDIUM")}</option>
+                  <option value="HIGH">{tc("severity.HIGH")}</option>
+                  <option value="CRITICAL">{tc("severity.CRITICAL")}</option>
+                </select>
+              </div>
             </div>
           )}
         </div>
@@ -376,7 +489,7 @@ export default function CaseDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Tabs: Notes & Evidence */}
+            {/* Tabs: Notes, Evidence, Timeline */}
             <Tabs defaultValue="notes">
               <TabsList>
                 <TabsTrigger value="notes">
@@ -385,10 +498,14 @@ export default function CaseDetailPage() {
                 <TabsTrigger value="evidence">
                   {t("caseDetail.evidence", { count: report.evidence_count })}
                 </TabsTrigger>
+                <TabsTrigger value="timeline">
+                  <History className="h-3.5 w-3.5 me-1.5" />
+                  {t("timeline.title")}
+                </TabsTrigger>
               </TabsList>
 
+              {/* Notes tab */}
               <TabsContent value="notes" className="mt-4 space-y-4">
-                {/* Add note — not for VIEWER */}
                 {!hasRole("VIEWER") && (
                   <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
                     <CardContent className="pt-4">
@@ -429,7 +546,6 @@ export default function CaseDetailPage() {
                   </Card>
                 )}
 
-                {/* Notes list */}
                 {notes.length === 0 ? (
                   <p className="text-sm text-[#909090] text-center py-6">
                     {t("caseDetail.noNotes")}
@@ -464,6 +580,7 @@ export default function CaseDetailPage() {
                 )}
               </TabsContent>
 
+              {/* Evidence tab */}
               <TabsContent value="evidence" className="mt-4">
                 <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
                   <CardContent className="py-8 text-center text-sm text-[#909090]">
@@ -473,6 +590,114 @@ export default function CaseDetailPage() {
                       </p>
                     ) : (
                       <p>{t("caseDetail.noEvidence")}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Timeline tab */}
+              <TabsContent value="timeline" className="mt-4">
+                <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2 text-black">
+                      <History className="h-4 w-4 text-[#00653E]" />
+                      {t("timeline.activityLog")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {timelineLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-5 w-5 animate-spin text-[#9B9B9B]" />
+                      </div>
+                    ) : timeline.length === 0 ? (
+                      <p className="text-sm text-[#909090] text-center py-6">
+                        {t("timeline.noActivity")}
+                      </p>
+                    ) : (
+                      <div className="relative">
+                        {/* Vertical line */}
+                        <div className="absolute start-[18px] top-0 bottom-0 w-px bg-[#EBEBEB]" />
+
+                        <div className="space-y-0">
+                          {timeline.map((entry, idx) => {
+                            const config = timelineConfig[entry.action] ?? {
+                              icon: History,
+                              color: "text-[#636363]",
+                              bgColor: "bg-[#F5F5F5]",
+                            };
+                            const Icon = config.icon;
+                            const isLast = idx === timeline.length - 1;
+
+                            return (
+                              <div
+                                key={entry.id}
+                                className={`relative flex gap-4 ${isLast ? "" : "pb-6"}`}
+                              >
+                                {/* Icon dot */}
+                                <div
+                                  className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${config.bgColor}`}
+                                >
+                                  <Icon className={`h-4 w-4 ${config.color}`} />
+                                </div>
+
+                                {/* Content */}
+                                <div className="flex-1 min-w-0 pt-1">
+                                  <p className="text-sm font-medium text-black">
+                                    {getTimelineDescription(entry)}
+                                  </p>
+                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                                    {entry.actor_email && (
+                                      <span className="text-xs text-[#636363]">
+                                        {entry.actor_email}
+                                      </span>
+                                    )}
+                                    <span className="text-xs text-[#909090]">
+                                      {formatFullDateTime(entry.created_at)}
+                                    </span>
+                                    {entry.ip_address && (
+                                      <span className="inline-flex items-center gap-1 text-xs text-[#909090]">
+                                        <Globe className="h-3 w-3" />
+                                        {entry.ip_address}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Status/severity change badges */}
+                                  {(entry.action === "REPORT_STATUS_UPDATED" ||
+                                    entry.action === "REPORT_SEVERITY_UPDATED") &&
+                                    entry.metadata_ && (
+                                      <div className="flex items-center gap-2 mt-2">
+                                        <span
+                                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
+                                            entry.action === "REPORT_STATUS_UPDATED"
+                                              ? statusColor[String(entry.metadata_.old)] ?? ""
+                                              : severityColor[String(entry.metadata_.old)] ?? ""
+                                          }`}
+                                        >
+                                          {entry.action === "REPORT_STATUS_UPDATED"
+                                            ? tc(`status.${entry.metadata_.old}`)
+                                            : tc(`severity.${entry.metadata_.old}`)}
+                                        </span>
+                                        <ArrowRight className="h-3 w-3 text-[#909090]" />
+                                        <span
+                                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
+                                            entry.action === "REPORT_STATUS_UPDATED"
+                                              ? statusColor[String(entry.metadata_.new)] ?? ""
+                                              : severityColor[String(entry.metadata_.new)] ?? ""
+                                          }`}
+                                        >
+                                          {entry.action === "REPORT_STATUS_UPDATED"
+                                            ? tc(`status.${entry.metadata_.new}`)
+                                            : tc(`severity.${entry.metadata_.new}`)}
+                                        </span>
+                                      </div>
+                                    )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -548,7 +773,7 @@ export default function CaseDetailPage() {
                       title={t("caseDetail.markUnderReview")}
                       className="w-full justify-start border-[#EBEBEB] text-[#636363] cursor-pointer"
                       disabled={updatingStatus}
-                      onClick={() => handleStatusChange("UNDER_REVIEW")}
+                      onClick={() => openStatusConfirm("UNDER_REVIEW")}
                     >
                       {t("caseDetail.markUnderReview")}
                     </Button>
@@ -560,7 +785,7 @@ export default function CaseDetailPage() {
                       title={t("caseDetail.startInvestigation")}
                       className="w-full justify-start border-[#EBEBEB] text-[#636363] cursor-pointer"
                       disabled={updatingStatus}
-                      onClick={() => handleStatusChange("INVESTIGATING")}
+                      onClick={() => openStatusConfirm("INVESTIGATING")}
                     >
                       {t("caseDetail.startInvestigation")}
                     </Button>
@@ -572,7 +797,7 @@ export default function CaseDetailPage() {
                       title={t("caseDetail.escalateCritical")}
                       className="w-full justify-start border-[#EBEBEB] text-[#636363] cursor-pointer"
                       disabled={updatingSeverity}
-                      onClick={() => handleSeverityChange("CRITICAL")}
+                      onClick={() => openSeverityConfirm("CRITICAL")}
                     >
                       {t("caseDetail.escalateCritical")}
                     </Button>
@@ -584,7 +809,7 @@ export default function CaseDetailPage() {
                       title={t("caseDetail.closeCase")}
                       className="w-full justify-start border-[#EBEBEB] text-[#636363] cursor-pointer"
                       disabled={updatingStatus}
-                      onClick={() => handleStatusChange("CLOSED")}
+                      onClick={() => openStatusConfirm("CLOSED")}
                     >
                       {t("caseDetail.closeCase")}
                     </Button>
@@ -645,6 +870,16 @@ export default function CaseDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Status/Severity change confirmation dialog */}
+      <StatusChangeDialog
+        open={statusDialog.open}
+        onOpenChange={(open) => setStatusDialog((prev) => ({ ...prev, open }))}
+        type={statusDialog.type}
+        currentValue={statusDialog.current}
+        newValue={statusDialog.next}
+        onConfirm={handleConfirmedChange}
+      />
     </div>
   );
 }

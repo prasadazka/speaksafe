@@ -1,15 +1,16 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.encryption import decrypt, encrypt
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
-from app.models.audit_log import AuditAction
+from app.models.audit_log import AuditAction, AuditLog
 from app.models.report import Report, ReportCategory, ReportStatus, Severity, generate_tracking_id
+from app.schemas.audit_log import AuditLogItem
 from app.schemas.report import (
     ApiResponse,
     ReportCreate,
@@ -21,6 +22,16 @@ from app.schemas.report import (
     ReportSubmitted,
 )
 from app.services.audit import log_action
+
+
+def _get_client_ip(request: Request) -> str | None:
+    """Extract the real client IP, respecting X-Forwarded-For behind proxies."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    if request.client:
+        return request.client.host
+    return None
 
 router = APIRouter(prefix="/api/v1/reports", tags=["Reports"])
 
@@ -39,6 +50,7 @@ def _decrypt_report_detail(report: Report) -> dict:
 @router.post("", response_model=ApiResponse)
 async def submit_report(
     payload: ReportCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     # Generate a unique tracking ID with retry on collision
@@ -69,6 +81,7 @@ async def submit_report(
     await log_action(
         db, AuditAction.REPORT_CREATED, "report", str(report.id),
         metadata={"tracking_id": report.tracking_id, "category": payload.category.value},
+        ip_address=_get_client_ip(request),
     )
     await db.commit()
     await db.refresh(report)
@@ -162,6 +175,7 @@ async def get_report(
 async def update_status(
     report_id: uuid.UUID,
     payload: ReportStatusUpdate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
@@ -178,6 +192,7 @@ async def update_status(
     await log_action(
         db, AuditAction.REPORT_STATUS_UPDATED, "report", str(report_id),
         actor=user, metadata={"old": old_status, "new": payload.status.value},
+        ip_address=_get_client_ip(request),
     )
     await db.commit()
     await db.refresh(report)
@@ -190,6 +205,7 @@ async def update_status(
 async def update_severity(
     report_id: uuid.UUID,
     payload: ReportSeverityUpdate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
@@ -206,6 +222,7 @@ async def update_severity(
     await log_action(
         db, AuditAction.REPORT_SEVERITY_UPDATED, "report", str(report_id),
         actor=user, metadata={"old": old_severity, "new": payload.severity.value},
+        ip_address=_get_client_ip(request),
     )
     await db.commit()
     await db.refresh(report)
@@ -217,6 +234,7 @@ async def update_severity(
 @router.delete("/{report_id}", response_model=ApiResponse)
 async def delete_report(
     report_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
@@ -230,7 +248,48 @@ async def delete_report(
     report.is_deleted = True
     await log_action(
         db, AuditAction.REPORT_DELETED, "report", str(report_id), actor=user,
+        ip_address=_get_client_ip(request),
     )
     await db.commit()
 
     return ApiResponse(data={"message": "Report deleted"})
+
+
+# ── ADMIN: Case timeline (all audit entries for a report) ──
+@router.get("/{report_id}/timeline", response_model=ApiResponse)
+async def get_case_timeline(
+    report_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _user: AdminUser = Depends(get_current_user),
+) -> ApiResponse:
+    """Return all audit log entries related to a report, ordered chronologically."""
+    result = await db.execute(
+        select(Report.id).where(Report.id == report_id, Report.is_deleted.is_(False))
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    rid = str(report_id)
+
+    # Fetch logs where the resource is the report itself,
+    # or where metadata references this report (notes, evidence).
+    query = (
+        select(AuditLog)
+        .where(
+            or_(
+                (AuditLog.resource_type == "report") & (AuditLog.resource_id == rid),
+                AuditLog.metadata_.op("->>")(  # type: ignore[union-attr]
+                    "report_id"
+                ) == rid,
+            )
+        )
+        .order_by(AuditLog.created_at.asc())
+    )
+    logs = (await db.execute(query)).scalars().all()
+
+    return ApiResponse(
+        data=[
+            AuditLogItem.model_validate(log).model_dump(mode="json")
+            for log in logs
+        ],
+    )
