@@ -50,7 +50,10 @@ async def add_note(
     await db.flush()
 
     forwarded = request.headers.get("x-forwarded-for")
-    ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else None)
+    if forwarded:
+        ip = forwarded.split(",")[0].strip()
+    else:
+        ip = request.client.host if request.client else None
 
     await log_action(
         db, AuditAction.NOTE_ADDED, "case_note", str(note.id),
