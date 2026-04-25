@@ -88,7 +88,7 @@ export default async function HomePage({
               {tc("nav.admin")}
             </Link>
             <Link href="/report">
-              <button className="cursor-pointer flex items-center gap-2.5 bg-[#00653E] text-white px-7 py-2.5 md:px-9 md:py-3 rounded font-semibold text-sm md:text-base shadow-[0_0_20px_rgba(0,101,62,0.5)] border border-white/15 hover:bg-[#007A4A] hover:-translate-y-0.5 hover:shadow-[0_0_28px_rgba(0,101,62,0.7)] active:translate-y-0 transition-all duration-200">
+              <button title="Raise a Concern" className="cursor-pointer flex items-center gap-2.5 bg-[#00653E] text-white px-7 py-2.5 md:px-9 md:py-3 rounded font-semibold text-sm md:text-base shadow-[0_0_20px_rgba(0,101,62,0.5)] border border-white/15 hover:bg-[#007A4A] hover:-translate-y-0.5 hover:shadow-[0_0_28px_rgba(0,101,62,0.7)] active:translate-y-0 transition-all duration-200">
                 <FileText className="h-5 w-5" />
                 {tc("nav.raiseConcern")}
               </button>
@@ -141,13 +141,13 @@ export default async function HomePage({
                 {/* CTA buttons */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link href="/report">
-                    <button className="cursor-pointer flex items-center justify-center gap-2.5 bg-[#00653E] text-white px-9 py-3.5 rounded font-semibold text-xl shadow-[0_0_20px_rgba(0,101,62,0.5)] border border-white/15 hover:bg-[#007A4A] hover:-translate-y-0.5 hover:shadow-[0_0_28px_rgba(0,101,62,0.7)] active:translate-y-0 transition-all duration-200 w-full sm:w-auto">
+                    <button title="Raise a Concern" className="cursor-pointer flex items-center justify-center gap-2.5 bg-[#00653E] text-white px-9 py-3.5 rounded font-semibold text-xl shadow-[0_0_20px_rgba(0,101,62,0.5)] border border-white/15 hover:bg-[#007A4A] hover:-translate-y-0.5 hover:shadow-[0_0_28px_rgba(0,101,62,0.7)] active:translate-y-0 transition-all duration-200 w-full sm:w-auto">
                       <FileText className="h-6 w-6" />
                       {t("hero.raiseConcern")}
                     </button>
                   </Link>
                   <Link href="/track">
-                    <button className="cursor-pointer flex items-center justify-center gap-2.5 bg-[#222222] text-white px-9 py-3.5 rounded font-semibold text-xl shadow-[0_0_20px_rgba(34,34,34,0.5)] border border-white/15 hover:bg-[#333333] hover:-translate-y-0.5 hover:shadow-[0_0_28px_rgba(34,34,34,0.7)] active:translate-y-0 transition-all duration-200 w-full sm:w-auto">
+                    <button title="Check report status" className="cursor-pointer flex items-center justify-center gap-2.5 bg-[#222222] text-white px-9 py-3.5 rounded font-semibold text-xl shadow-[0_0_20px_rgba(34,34,34,0.5)] border border-white/15 hover:bg-[#333333] hover:-translate-y-0.5 hover:shadow-[0_0_28px_rgba(34,34,34,0.7)] active:translate-y-0 transition-all duration-200 w-full sm:w-auto">
                       <CheckCircle2 className="h-6 w-6" />
                       {t("hero.checkStatus")}
                     </button>
@@ -559,13 +559,13 @@ export default async function HomePage({
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link href="/report">
-                      <button className="cursor-pointer flex items-center justify-center gap-2.5 bg-white text-[#00653E] px-9 py-3.5 rounded font-semibold text-lg md:text-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:bg-white/90 transition-colors w-full sm:w-auto">
+                      <button title="Raise a Concern" className="cursor-pointer flex items-center justify-center gap-2.5 bg-white text-[#00653E] px-9 py-3.5 rounded font-semibold text-lg md:text-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:bg-white/90 transition-colors w-full sm:w-auto">
                         <FileText className="h-5 w-5" />
                         {t("cta.raiseConcern")}
                       </button>
                     </Link>
                     <Link href="/track">
-                      <button className="cursor-pointer flex items-center justify-center gap-2.5 bg-[#01151C] text-white px-9 py-3.5 rounded font-semibold text-lg md:text-xl hover:bg-[#021F28] transition-colors w-full sm:w-auto border border-white/20">
+                      <button title="Follow up on report" className="cursor-pointer flex items-center justify-center gap-2.5 bg-[#01151C] text-white px-9 py-3.5 rounded font-semibold text-lg md:text-xl hover:bg-[#021F28] transition-colors w-full sm:w-auto border border-white/20">
                         <CheckCircle2 className="h-5 w-5" />
                         {t("cta.followUp")}
                       </button>

@@ -397,6 +397,7 @@ export default function ReportPage() {
                       size="sm"
                       variant="outline"
                       onClick={copyId}
+                      title="Copy tracking ID"
                       className={`gap-1.5 rounded-[8px] border-[#EBEBEB] cursor-pointer transition-all duration-200 ${
                         copied
                           ? "border-[#00653E] bg-[#00653E]/5 text-[#00653E]"
@@ -427,6 +428,7 @@ export default function ReportPage() {
               >
                 <Button
                   variant="outline"
+                  title="Download report as PDF"
                   className="w-full h-[48px] mb-4 gap-2 rounded-[10px] border-[#EBEBEB] bg-white text-black hover:bg-gray-50 cursor-pointer"
                   onClick={() => generateReportPdf(result)}
                 >
@@ -453,13 +455,14 @@ export default function ReportPage() {
                 <Link href="/track" className="flex-1">
                   <Button
                     variant="outline"
+                    title="Check report status"
                     className="w-full h-[48px] rounded-[10px] border-[#EBEBEB] text-black font-semibold hover:bg-gray-50 cursor-pointer"
                   >
                     {t("success.checkStatus")}
                   </Button>
                 </Link>
                 <Link href="/" className="flex-1">
-                  <Button className="w-full h-[48px] rounded-[10px] bg-[#00653E] hover:bg-[#005232] text-white font-semibold cursor-pointer">
+                  <Button title="Return to home page" className="w-full h-[48px] rounded-[10px] bg-[#00653E] hover:bg-[#005232] text-white font-semibold cursor-pointer">
                     {t("success.done")}
                   </Button>
                 </Link>
@@ -782,6 +785,7 @@ function StepCategory({
           onClick={onNext}
           disabled={!value}
           size="lg"
+          title="Continue to next step"
           className="px-9 h-[52px] text-base font-semibold shadow-lg shadow-primary/20"
         >
           {t("step1.continue")} <ArrowRight className="h-5 w-5 ml-2" />
@@ -891,6 +895,7 @@ function StepDetails({
                     aiLoading || charCount < 30 || !category || !!aiFormatted
                   }
                   onClick={handleAiFormat}
+                  title="Format description with AI"
                   className="h-[52px] gap-2.5 text-base font-semibold rounded bg-[#2A8F68] hover:bg-[#238458] text-white px-9"
                 >
                   {aiLoading ? (
@@ -948,6 +953,7 @@ function StepDetails({
                     <Button
                       type="button"
                       onClick={acceptAiText}
+                      title="Use AI-formatted version"
                       className="gap-2 shadow-md shadow-primary/20"
                     >
                       <Check className="h-4 w-4" />
@@ -957,6 +963,7 @@ function StepDetails({
                       type="button"
                       variant="ghost"
                       onClick={dismissAiText}
+                      title="Keep original description"
                       className="text-muted-foreground"
                     >
                       {t("step2.keepOriginal")}
@@ -1047,6 +1054,7 @@ function StepDetails({
         <Button
           onClick={onBack}
           size="lg"
+          title="Go back to previous step"
           className="h-[52px] px-9 bg-[#01151C] hover:bg-[#0a2a36] text-white font-semibold"
         >
           <ArrowLeft className="h-5 w-5 mr-2" /> {t("step2.back")}
@@ -1055,6 +1063,7 @@ function StepDetails({
           onClick={onNext}
           disabled={!description || description.length < 10}
           size="lg"
+          title="Continue to next step"
           className="h-[52px] px-9 font-semibold shadow-lg shadow-primary/20"
         >
           {t("step2.continue")} <ArrowRight className="h-5 w-5 ml-2" />
@@ -1107,6 +1116,7 @@ function StepEvidence({
         <Button
           onClick={onBack}
           size="lg"
+          title="Go back to previous step"
           className="h-[52px] px-9 bg-[#01151C] hover:bg-[#0a2a36] text-white font-semibold"
         >
           <ArrowLeft className="h-5 w-5 mr-2" /> {t("step3.back")}
@@ -1114,6 +1124,7 @@ function StepEvidence({
         <Button
           onClick={onNext}
           size="lg"
+          title="Continue to next step"
           className="h-[52px] px-9 font-semibold shadow-lg shadow-primary/20"
         >
           {files.length === 0 ? t("step3.skip") : t("step3.continue")}{" "}
@@ -1284,6 +1295,7 @@ function StepReview({
           type="button"
           onClick={onBack}
           disabled={submitting}
+          title="Go back to edit"
           className="h-[46px] px-7 bg-[#01151C] hover:bg-[#01151C]/90 text-white font-semibold text-base rounded-[4px]"
         >
           <ArrowLeft className="h-4 w-4 mr-2" /> {t("step4.backToEdit")}
@@ -1292,6 +1304,7 @@ function StepReview({
           type="button"
           onClick={onSubmit}
           disabled={!confirmed || submitting}
+          title="Submit report securely"
           className="h-[46px] px-7 bg-[#00653E] hover:bg-[#00653E]/90 text-white font-semibold text-base rounded-[4px]"
         >
           {submitting ? (

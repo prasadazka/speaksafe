@@ -33,6 +33,7 @@ interface AuthContextValue {
   clearMfa: () => void;
   logout: () => void;
   hasRole: (...roles: AdminRole[]) => boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -100,6 +101,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setMfaState(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    const t = token ?? localStorage.getItem(TOKEN_KEY);
+    if (!t) return;
+    const res = await getMe(t);
+    if (res.success && res.data) {
+      setUser(res.data as AdminProfile);
+    }
+  }, [token]);
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
@@ -117,8 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ user, token, isLoading, mfaState, login, clearMfa, logout, hasRole }),
-    [user, token, isLoading, mfaState, login, clearMfa, logout, hasRole],
+    () => ({ user, token, isLoading, mfaState, login, clearMfa, logout, hasRole, refreshUser }),
+    [user, token, isLoading, mfaState, login, clearMfa, logout, hasRole, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

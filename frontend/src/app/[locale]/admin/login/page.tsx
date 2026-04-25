@@ -197,6 +197,7 @@ export default function AdminLoginPage() {
 
               <Button
                 type="submit"
+                title="Verify MFA code"
                 className="w-full h-[52px] bg-[#00653E] hover:bg-[#005232] text-white text-lg font-semibold rounded-[4px] cursor-pointer"
                 disabled={loading || totpCode.length < 6}
               >
@@ -210,6 +211,7 @@ export default function AdminLoginPage() {
               <Button
                 type="button"
                 variant="ghost"
+                title="Back to login"
                 className="w-full text-[#909090] hover:text-black"
                 onClick={handleBackToLogin}
               >
@@ -301,6 +303,7 @@ export default function AdminLoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute end-4 top-1/2 -translate-y-1/2 text-[#909090] hover:text-black transition-colors cursor-pointer"
                   tabIndex={-1}
+                  title={showPassword ? "Hide password" : "Show password"}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -323,6 +326,7 @@ export default function AdminLoginPage() {
 
             <Button
               type="submit"
+              title="Sign in to admin panel"
               className="w-full h-[52px] bg-[#00653E] hover:bg-[#005232] text-white text-lg font-semibold rounded-[4px] gap-2 cursor-pointer"
               disabled={loading}
             >
@@ -341,6 +345,7 @@ export default function AdminLoginPage() {
           <div className="mt-6">
             <button
               onClick={() => setShowTestAccounts(!showTestAccounts)}
+              title="Show test credentials"
               className="w-full flex items-center justify-center gap-2 text-sm text-[#909090] hover:text-black transition-colors py-2"
             >
               <span>{t("login.testCredentials")}</span>
@@ -371,6 +376,7 @@ export default function AdminLoginPage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        title="Copy credentials"
                         className="h-7 px-2 text-xs text-[#909090]"
                         onClick={() => {
                           copyToClipboard(
@@ -388,6 +394,7 @@ export default function AdminLoginPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        title="Use these credentials"
                         className="h-7 px-3 text-xs border-[#BEBEBE] text-black"
                         onClick={() => fillCredentials(acct)}
                       >

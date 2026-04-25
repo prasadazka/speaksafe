@@ -5,17 +5,20 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, require_role
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db.session import get_db
-from app.models.admin_user import AdminUser
+from app.models.admin_user import AdminRole, AdminUser
 from app.models.audit_log import AuditAction
 from app.schemas.auth import (
+    ActiveUpdate,
     AdminLogin,
     AdminProfile,
     AdminRegister,
+    AdminUserListItem,
     MFASetupResponse,
     MFAVerify,
+    RoleUpdate,
     TokenResponse,
 )
 from app.schemas.report import ApiResponse
@@ -164,3 +167,115 @@ async def mfa_disable(
     await db.commit()
 
     return ApiResponse(data={"message": "MFA disabled"})
+
+
+# ── User Management (ADMIN only) ──
+
+
+@router.get("/users", response_model=ApiResponse)
+async def list_users(
+    page: int = 1,
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+) -> ApiResponse:
+    offset = (page - 1) * limit
+    result = await db.execute(
+        select(AdminUser).order_by(AdminUser.created_at.desc()).offset(offset).limit(limit)
+    )
+    users = result.scalars().all()
+
+    from sqlalchemy import func as sa_func
+
+    total_result = await db.execute(select(sa_func.count(AdminUser.id)))
+    total = total_result.scalar() or 0
+
+    return ApiResponse(
+        data=[AdminUserListItem.model_validate(u).model_dump(mode="json") for u in users],
+        meta={"page": page, "limit": limit, "total": total},
+    )
+
+
+@router.patch("/users/{user_id}/role", response_model=ApiResponse)
+async def update_user_role(
+    user_id: uuid.UUID,
+    payload: RoleUpdate,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+) -> ApiResponse:
+    if admin.id == user_id:
+        raise HTTPException(status_code=400, detail="Cannot change your own role")
+
+    result = await db.execute(select(AdminUser).where(AdminUser.id == user_id))
+    target = result.scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    old_role = target.role.value
+    target.role = payload.role
+
+    await log_action(
+        db, AuditAction.ADMIN_ROLE_CHANGED, "admin_user", str(user_id),
+        actor=admin,
+        metadata={"email": target.email, "old_role": old_role, "new_role": payload.role.value},
+    )
+    await db.commit()
+
+    return ApiResponse(
+        data=AdminUserListItem.model_validate(target).model_dump(mode="json"),
+    )
+
+
+@router.patch("/users/{user_id}/active", response_model=ApiResponse)
+async def update_user_active(
+    user_id: uuid.UUID,
+    payload: ActiveUpdate,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+) -> ApiResponse:
+    if admin.id == user_id:
+        raise HTTPException(status_code=400, detail="Cannot deactivate yourself")
+
+    result = await db.execute(select(AdminUser).where(AdminUser.id == user_id))
+    target = result.scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    target.is_active = payload.is_active
+    action = AuditAction.ADMIN_ACTIVATED if payload.is_active else AuditAction.ADMIN_DEACTIVATED
+
+    await log_action(
+        db, action, "admin_user", str(user_id),
+        actor=admin,
+        metadata={"email": target.email, "is_active": payload.is_active},
+    )
+    await db.commit()
+
+    return ApiResponse(
+        data=AdminUserListItem.model_validate(target).model_dump(mode="json"),
+    )
+
+
+@router.delete("/users/{user_id}", response_model=ApiResponse)
+async def delete_user(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+) -> ApiResponse:
+    if admin.id == user_id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+
+    result = await db.execute(select(AdminUser).where(AdminUser.id == user_id))
+    target = result.scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await log_action(
+        db, AuditAction.ADMIN_DELETED, "admin_user", str(user_id),
+        actor=admin,
+        metadata={"email": target.email, "role": target.role.value},
+    )
+    await db.delete(target)
+    await db.commit()
+
+    return ApiResponse(data={"message": "User deleted"})

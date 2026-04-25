@@ -73,7 +73,16 @@ export type AuditAction =
   | "EVIDENCE_DELETED"
   | "NOTE_ADDED"
   | "ADMIN_REGISTERED"
-  | "ADMIN_LOGIN";
+  | "ADMIN_LOGIN"
+  | "ADMIN_ROLE_CHANGED"
+  | "ADMIN_DEACTIVATED"
+  | "ADMIN_ACTIVATED"
+  | "ADMIN_DELETED";
+
+export interface MFASetupResponse {
+  secret: string;
+  otpauth_url: string;
+}
 
 export interface AuditLogItem {
   id: string;
@@ -275,5 +284,104 @@ export async function getAuditLogs(
     `${API_BASE}/api/v1/audit${qs ? `?${qs}` : ""}`,
     { headers: authHeaders(token) },
   );
+  return handleResponse(res);
+}
+
+/* ── MFA Management ── */
+
+export async function mfaSetup(
+  token: string,
+): Promise<ApiResponse<MFASetupResponse>> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/mfa/setup`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+  return handleResponse<MFASetupResponse>(res);
+}
+
+export async function mfaVerify(
+  token: string,
+  code: string,
+): Promise<ApiResponse<{ message: string }>> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/mfa/verify`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ code }),
+  });
+  return handleResponse(res);
+}
+
+export async function mfaDisable(
+  token: string,
+  code: string,
+): Promise<ApiResponse<{ message: string }>> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/mfa/disable`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ code }),
+  });
+  return handleResponse(res);
+}
+
+/* ── User Management (ADMIN only) ── */
+
+export async function listUsers(
+  token: string,
+  page: number = 1,
+  limit: number = 20,
+): Promise<ApiResponse<AdminProfile[]>> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/auth/users?page=${page}&limit=${limit}`,
+    { headers: authHeaders(token) },
+  );
+  return handleResponse(res);
+}
+
+export async function registerUser(
+  token: string,
+  data: { email: string; password: string; full_name: string; role: AdminRole },
+): Promise<ApiResponse<TokenResponse>> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/register`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+}
+
+export async function updateUserRole(
+  token: string,
+  userId: string,
+  role: AdminRole,
+): Promise<ApiResponse<AdminProfile>> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/users/${userId}/role`, {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify({ role }),
+  });
+  return handleResponse(res);
+}
+
+export async function updateUserActive(
+  token: string,
+  userId: string,
+  isActive: boolean,
+): Promise<ApiResponse<AdminProfile>> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/users/${userId}/active`, {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify({ is_active: isActive }),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteUser(
+  token: string,
+  userId: string,
+): Promise<ApiResponse<{ message: string }>> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/users/${userId}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
   return handleResponse(res);
 }

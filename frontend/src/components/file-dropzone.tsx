@@ -220,6 +220,7 @@ export function FileDropzone({ files, onChange }: FileDropzoneProps) {
                     type="button"
                     variant="ghost"
                     size="icon"
+                    title="Remove file"
                     className="h-7 w-7 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
                     onClick={(e) => {
                       e.stopPropagation();

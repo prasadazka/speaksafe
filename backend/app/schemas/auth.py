@@ -50,3 +50,26 @@ class AdminProfile(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ── User Management ──
+
+class AdminUserListItem(BaseModel):
+    id: uuid.UUID
+    email: str
+    full_name: str
+    role: AdminRole
+    is_active: bool
+    mfa_enabled: bool
+    last_login_at: datetime | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class RoleUpdate(BaseModel):
+    role: AdminRole
+
+
+class ActiveUpdate(BaseModel):
+    is_active: bool

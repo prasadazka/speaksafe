@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Shield,
   FileText,
   AlertTriangle,
   Clock,
@@ -14,7 +12,6 @@ import {
   BarChart3,
   TrendingUp,
   Users,
-  LogOut,
   ChevronLeft,
   ChevronRight,
   MessageSquare,
@@ -29,6 +26,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { AdminHeader } from "@/components/admin/admin-header";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getReports,
@@ -70,14 +68,7 @@ function timeAgo(iso: string) {
   return `${days}d ago`;
 }
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
+
 
 /* ── Stat card illustration mapping ── */
 const STAT_CARDS = [
@@ -88,7 +79,7 @@ const STAT_CARDS = [
 ];
 
 export default function DashboardPage() {
-  const { user, token, isLoading, logout, hasRole } = useAuth();
+  const { user, token, isLoading, hasRole } = useAuth();
   const router = useRouter();
   const t = useTranslations("admin");
   const tc = useTranslations("common");
@@ -209,49 +200,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FDFB]">
-      {/* ── Top Navbar — Figma: 89px, white, border-bottom #E5E5E5 ── */}
-      <header className="sticky top-0 z-40 bg-white border-b border-[#E5E5E5]">
-        <div className="mx-auto px-6 lg:px-12 h-[70px] lg:h-[89px] flex items-center justify-between">
-          {/* Left: Brand + Divider + Dashboard */}
-          <div className="flex items-center gap-0">
-            <Link
-              href="/admin/dashboard"
-              className="flex items-center gap-2 pe-6"
-            >
-              <Shield className="h-6 w-6 text-[#00653E]" />
-              <span className="text-xl lg:text-2xl font-bold tracking-tight text-[#00653E] font-sans">
-                {tc("brand")}
-              </span>
-            </Link>
-            <div className="hidden md:block w-px h-9 bg-[#D9D9D9] mx-2" />
-            <span className="hidden md:block text-lg lg:text-xl font-semibold text-[#636363] ps-4">
-              {t("dashboard.title")}
-            </span>
-          </div>
-
-          {/* Right: User + Divider + Logout */}
-          <div className="flex items-center gap-0">
-            <div className="flex items-center gap-2.5 pe-4">
-              <div className="h-7 w-7 rounded-full bg-[#00653E] flex items-center justify-center">
-                <span className="text-[12px] font-normal text-white">
-                  {getInitials(user.full_name)}
-                </span>
-              </div>
-              <span className="hidden sm:block text-base text-[#00653E]">
-                {user.full_name}
-              </span>
-            </div>
-            <div className="hidden md:block w-px h-9 bg-[#D9D9D9] mx-2" />
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 ps-4 text-[#636363] hover:text-black transition-colors cursor-pointer"
-              aria-label="Logout"
-            >
-              <LogOut className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* ── Top Navbar ── */}
+      <AdminHeader title={t("dashboard.title")} />
 
       <main className="flex-1 mx-auto w-full px-4 lg:px-12 py-6 max-w-[1920px]">
         {/* ── Stats Row — Figma: 4 cards, 440px each, 199px tall ── */}
@@ -442,6 +392,7 @@ export default function DashboardPage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        title="Previous page"
                         disabled={page <= 1}
                         onClick={() => setPage((p) => p - 1)}
                         className="cursor-pointer"
@@ -451,6 +402,7 @@ export default function DashboardPage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        title="Next page"
                         disabled={page >= totalPages}
                         onClick={() => setPage((p) => p + 1)}
                         className="cursor-pointer"

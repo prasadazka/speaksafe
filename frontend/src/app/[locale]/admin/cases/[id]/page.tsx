@@ -247,7 +247,7 @@ export default function CaseDetailPage() {
         </header>
         <div className="text-center py-24">
           <p className="text-destructive mb-4">{error}</p>
-          <Button variant="outline" onClick={() => router.push("/admin/dashboard")}>
+          <Button variant="outline" title="Back to Dashboard" onClick={() => router.push("/admin/dashboard")}>
             {t("caseDetail.backToDashboard")}
           </Button>
         </div>
@@ -293,6 +293,7 @@ export default function CaseDetailPage() {
             {error}
             <button
               className="ml-2 underline"
+              title="Dismiss error"
               onClick={() => setError(null)}
             >
               {t("caseDetail.dismiss")}
@@ -441,6 +442,7 @@ export default function CaseDetailPage() {
                           <div className="flex justify-end">
                             <Button
                               size="sm"
+                              title="Add note"
                               onClick={handleAddNote}
                               disabled={
                                 addingNote || !noteContent.trim()
@@ -576,6 +578,7 @@ export default function CaseDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      title="Mark as Under Review"
                       className="w-full justify-start"
                       disabled={updatingStatus}
                       onClick={() => handleStatusChange("UNDER_REVIEW")}
@@ -587,6 +590,7 @@ export default function CaseDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      title="Start Investigation"
                       className="w-full justify-start"
                       disabled={updatingStatus}
                       onClick={() => handleStatusChange("INVESTIGATING")}
@@ -598,6 +602,7 @@ export default function CaseDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      title="Escalate to Critical"
                       className="w-full justify-start"
                       disabled={updatingSeverity}
                       onClick={() => handleSeverityChange("CRITICAL")}
@@ -609,6 +614,7 @@ export default function CaseDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      title="Close Case"
                       className="w-full justify-start"
                       disabled={updatingStatus}
                       onClick={() => handleStatusChange("CLOSED")}
@@ -630,6 +636,7 @@ export default function CaseDetailPage() {
                             <Button
                               variant="destructive"
                               size="sm"
+                              title="Confirm delete"
                               className="flex-1"
                               disabled={deleting}
                               onClick={handleDelete}
@@ -643,6 +650,7 @@ export default function CaseDetailPage() {
                             <Button
                               variant="outline"
                               size="sm"
+                              title="Cancel"
                               className="flex-1"
                               onClick={() => setConfirmDelete(false)}
                             >
@@ -654,6 +662,7 @@ export default function CaseDetailPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          title="Delete report"
                           className="w-full justify-start text-destructive hover:text-destructive"
                           onClick={() => setConfirmDelete(true)}
                         >
