@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Shield,
   ArrowLeft,
   FileText,
   MessageSquare,
@@ -25,8 +24,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AdminHeader } from "@/components/admin/admin-header";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getReport,
@@ -204,28 +203,18 @@ export default function CaseDetailPage() {
 
   if (isLoading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F9FDFB]">
+        <Loader2 className="h-6 w-6 animate-spin text-[#9B9B9B]" />
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-card sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 h-14 flex items-center">
-            <Link
-              href="/admin/dashboard"
-              className="flex items-center gap-2"
-            >
-              <Shield className="h-5 w-5 text-primary" />
-              <span className="font-bold tracking-tight">{tc("brand")}</span>
-            </Link>
-          </div>
-        </header>
+      <div className="min-h-screen flex flex-col bg-[#F9FDFB]">
+        <AdminHeader title={t("caseDetail.caseDetails")} />
         <div className="flex items-center justify-center py-24">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <Loader2 className="h-6 w-6 animate-spin text-[#9B9B9B]" />
         </div>
       </div>
     );
@@ -233,21 +222,16 @@ export default function CaseDetailPage() {
 
   if (error && !report) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-card sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4">
-            <Link
-              href="/admin/dashboard"
-              className="flex items-center gap-2"
-            >
-              <Shield className="h-5 w-5 text-primary" />
-              <span className="font-bold tracking-tight">{tc("brand")}</span>
-            </Link>
-          </div>
-        </header>
+      <div className="min-h-screen flex flex-col bg-[#F9FDFB]">
+        <AdminHeader title={t("caseDetail.caseDetails")} />
         <div className="text-center py-24">
-          <p className="text-destructive mb-4">{error}</p>
-          <Button variant="outline" title="Back to Dashboard" onClick={() => router.push("/admin/dashboard")}>
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button
+            variant="outline"
+            title={t("caseDetail.backToDashboard")}
+            onClick={() => router.push("/admin/dashboard")}
+            className="border-[#EBEBEB] text-[#636363] cursor-pointer"
+          >
             {t("caseDetail.backToDashboard")}
           </Button>
         </div>
@@ -258,42 +242,26 @@ export default function CaseDetailPage() {
   if (!report) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Nav */}
-      <header className="border-b border-border bg-card sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin/dashboard"
-              className="flex items-center gap-2"
-            >
-              <Shield className="h-5 w-5 text-primary" />
-              <span className="font-bold tracking-tight">{tc("brand")}</span>
-            </Link>
-            <Separator orientation="vertical" className="h-6" />
-            <Link
-              href="/admin/dashboard"
-              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" /> {t("caseDetail.backToDashboard")}
-            </Link>
-          </div>
-          <Avatar className="h-7 w-7">
-            <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-              {getInitials(user.full_name)}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-[#F9FDFB]">
+      <AdminHeader title={report.tracking_id} />
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="flex-1 mx-auto w-full px-4 lg:px-12 py-6 max-w-[1920px]">
+        {/* Back to dashboard */}
+        <Link
+          href="/admin/dashboard"
+          className="inline-flex items-center gap-1.5 text-sm text-[#636363] hover:text-[#00653E] transition-colors mb-5"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t("caseDetail.backToDashboard")}
+        </Link>
+
         {/* Error banner */}
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
             {error}
             <button
-              className="ml-2 underline"
-              title="Dismiss error"
+              className="ms-2 underline cursor-pointer"
+              title={t("caseDetail.dismiss")}
               onClick={() => setError(null)}
             >
               {t("caseDetail.dismiss")}
@@ -304,8 +272,8 @@ export default function CaseDetailPage() {
         {/* Case Header */}
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-bold font-mono">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <h1 className="text-2xl font-bold font-mono text-black">
                 {report.tracking_id}
               </h1>
               <Badge
@@ -321,21 +289,21 @@ export default function CaseDetailPage() {
                 {tc(`status.${report.status}`)}
               </Badge>
             </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+            <div className="flex items-center gap-4 text-sm text-[#909090] flex-wrap">
               <span className="flex items-center gap-1">
-                <FileText className="h-3.5 w-3.5" />{" "}
+                <FileText className="h-3.5 w-3.5" />
                 {report.category.replace(/_/g, " ")}
               </span>
               <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />{" "}
+                <Clock className="h-3.5 w-3.5" />
                 {formatDateTime(report.created_at)}
               </span>
               <span className="flex items-center gap-1">
-                <Paperclip className="h-3.5 w-3.5" />{" "}
+                <Paperclip className="h-3.5 w-3.5" />
                 {t("caseDetail.files", { count: report.evidence_count })}
               </span>
               <span className="flex items-center gap-1">
-                <MessageSquare className="h-3.5 w-3.5" />{" "}
+                <MessageSquare className="h-3.5 w-3.5" />
                 {t("caseDetail.notesCount", { count: report.notes_count })}
               </span>
             </div>
@@ -344,7 +312,7 @@ export default function CaseDetailPage() {
             <div className="flex gap-2">
               <select
                 aria-label={t("caseDetail.changeStatus")}
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 rounded-lg border border-[#EBEBEB] bg-white px-3 text-sm text-[#636363] cursor-pointer"
                 value={report.status}
                 disabled={updatingStatus}
                 onChange={(e) =>
@@ -358,7 +326,7 @@ export default function CaseDetailPage() {
               </select>
               <select
                 aria-label={t("caseDetail.changeSeverity")}
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-9 rounded-lg border border-[#EBEBEB] bg-white px-3 text-sm text-[#636363] cursor-pointer"
                 value={report.severity}
                 disabled={updatingSeverity}
                 onChange={(e) =>
@@ -378,24 +346,24 @@ export default function CaseDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Description */}
-            <Card>
+            <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-destructive" />{" "}
+                <CardTitle className="text-base flex items-center gap-2 text-black">
+                  <AlertTriangle className="h-4 w-4 text-red-500" />
                   {t("caseDetail.reportDescription")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-[#636363]">
                   {report.description}
                 </p>
                 {report.location && (
-                  <p className="text-xs text-muted-foreground mt-3">
+                  <p className="text-xs text-[#909090] mt-3">
                     {t("caseDetail.location", { location: report.location })}
                   </p>
                 )}
                 {report.occurred_at && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-[#909090] mt-1">
                     {t("caseDetail.occurred", {
                       date: new Date(report.occurred_at).toLocaleDateString("en-US", {
                         year: "numeric",
@@ -408,7 +376,7 @@ export default function CaseDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Tabs: Notes */}
+            {/* Tabs: Notes & Evidence */}
             <Tabs defaultValue="notes">
               <TabsList>
                 <TabsTrigger value="notes">
@@ -422,19 +390,19 @@ export default function CaseDetailPage() {
               <TabsContent value="notes" className="mt-4 space-y-4">
                 {/* Add note — not for VIEWER */}
                 {!hasRole("VIEWER") && (
-                  <Card>
+                  <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
                     <CardContent className="pt-4">
                       <div className="flex gap-3">
-                        <Avatar className="h-8 w-8 shrink-0">
-                          <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                        <div className="h-8 w-8 rounded-full bg-[#00653E] flex items-center justify-center shrink-0">
+                          <span className="text-[10px] font-normal text-white">
                             {getInitials(user.full_name)}
-                          </AvatarFallback>
-                        </Avatar>
+                          </span>
+                        </div>
                         <div className="flex-1">
                           <Textarea
                             placeholder={t("caseDetail.addNotePlaceholder")}
                             rows={2}
-                            className="resize-none mb-2"
+                            className="resize-none mb-2 border-[#EBEBEB] text-[#636363] placeholder:text-[#BEBEBE]"
                             value={noteContent}
                             onChange={(e) => setNoteContent(e.target.value)}
                             disabled={addingNote}
@@ -442,16 +410,15 @@ export default function CaseDetailPage() {
                           <div className="flex justify-end">
                             <Button
                               size="sm"
-                              title="Add note"
+                              title={t("caseDetail.addNote")}
                               onClick={handleAddNote}
-                              disabled={
-                                addingNote || !noteContent.trim()
-                              }
+                              disabled={addingNote || !noteContent.trim()}
+                              className="bg-[#00653E] hover:bg-[#005232] text-white cursor-pointer"
                             >
                               {addingNote ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                                <Loader2 className="h-3.5 w-3.5 animate-spin me-1.5" />
                               ) : (
-                                <Send className="h-3.5 w-3.5 mr-1.5" />
+                                <Send className="h-3.5 w-3.5 me-1.5" />
                               )}
                               {t("caseDetail.addNote")}
                             </Button>
@@ -464,29 +431,29 @@ export default function CaseDetailPage() {
 
                 {/* Notes list */}
                 {notes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-6">
+                  <p className="text-sm text-[#909090] text-center py-6">
                     {t("caseDetail.noNotes")}
                   </p>
                 ) : (
                   notes.map((note) => (
-                    <Card key={note.id}>
+                    <Card key={note.id} className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
                       <CardContent className="pt-4">
                         <div className="flex gap-3">
-                          <Avatar className="h-8 w-8 shrink-0">
-                            <AvatarFallback className="text-xs">
+                          <div className="h-8 w-8 rounded-full bg-[#F5F5F5] flex items-center justify-center shrink-0">
+                            <span className="text-[10px] font-medium text-[#636363]">
                               {getInitials(note.author_name)}
-                            </AvatarFallback>
-                          </Avatar>
+                            </span>
+                          </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-medium">
+                              <span className="text-sm font-medium text-black">
                                 {note.author_name}
                               </span>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-xs text-[#909090]">
                                 {formatDateTime(note.created_at)}
                               </span>
                             </div>
-                            <p className="text-sm leading-relaxed text-muted-foreground">
+                            <p className="text-sm leading-relaxed text-[#636363]">
                               {note.content}
                             </p>
                           </div>
@@ -498,8 +465,8 @@ export default function CaseDetailPage() {
               </TabsContent>
 
               <TabsContent value="evidence" className="mt-4">
-                <Card>
-                  <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
+                  <CardContent className="py-8 text-center text-sm text-[#909090]">
                     {report.evidence_count > 0 ? (
                       <p>
                         {t("caseDetail.evidenceAttached", { count: report.evidence_count })}
@@ -515,9 +482,9 @@ export default function CaseDetailPage() {
 
           {/* Right Sidebar */}
           <div className="space-y-6">
-            <Card>
+            <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">{t("caseDetail.caseDetails")}</CardTitle>
+                <CardTitle className="text-base text-black">{t("caseDetail.caseDetails")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
@@ -556,10 +523,10 @@ export default function CaseDetailPage() {
                     key={item.label}
                     className="flex justify-between text-sm"
                   >
-                    <span className="text-muted-foreground">
+                    <span className="text-[#909090]">
                       {item.label}
                     </span>
-                    <span className="font-medium text-right">
+                    <span className="font-medium text-black text-right">
                       {item.value}
                     </span>
                   </div>
@@ -569,17 +536,17 @@ export default function CaseDetailPage() {
 
             {/* Quick Actions — role-dependent */}
             {!hasRole("VIEWER") && (
-              <Card>
+              <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">{t("caseDetail.quickActions")}</CardTitle>
+                  <CardTitle className="text-base text-black">{t("caseDetail.quickActions")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {report.status !== "UNDER_REVIEW" && (
                     <Button
                       variant="outline"
                       size="sm"
-                      title="Mark as Under Review"
-                      className="w-full justify-start"
+                      title={t("caseDetail.markUnderReview")}
+                      className="w-full justify-start border-[#EBEBEB] text-[#636363] cursor-pointer"
                       disabled={updatingStatus}
                       onClick={() => handleStatusChange("UNDER_REVIEW")}
                     >
@@ -590,8 +557,8 @@ export default function CaseDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      title="Start Investigation"
-                      className="w-full justify-start"
+                      title={t("caseDetail.startInvestigation")}
+                      className="w-full justify-start border-[#EBEBEB] text-[#636363] cursor-pointer"
                       disabled={updatingStatus}
                       onClick={() => handleStatusChange("INVESTIGATING")}
                     >
@@ -602,8 +569,8 @@ export default function CaseDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      title="Escalate to Critical"
-                      className="w-full justify-start"
+                      title={t("caseDetail.escalateCritical")}
+                      className="w-full justify-start border-[#EBEBEB] text-[#636363] cursor-pointer"
                       disabled={updatingSeverity}
                       onClick={() => handleSeverityChange("CRITICAL")}
                     >
@@ -614,8 +581,8 @@ export default function CaseDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      title="Close Case"
-                      className="w-full justify-start"
+                      title={t("caseDetail.closeCase")}
+                      className="w-full justify-start border-[#EBEBEB] text-[#636363] cursor-pointer"
                       disabled={updatingStatus}
                       onClick={() => handleStatusChange("CLOSED")}
                     >
@@ -626,18 +593,18 @@ export default function CaseDetailPage() {
                   {/* Delete — ADMIN only */}
                   {hasRole("ADMIN") && (
                     <>
-                      <Separator />
+                      <Separator className="bg-[#EBEBEB]" />
                       {confirmDelete ? (
                         <div className="space-y-2">
-                          <p className="text-xs text-destructive">
+                          <p className="text-xs text-red-600">
                             {t("caseDetail.confirmDeleteWarning")}
                           </p>
                           <div className="flex gap-2">
                             <Button
                               variant="destructive"
                               size="sm"
-                              title="Confirm delete"
-                              className="flex-1"
+                              title={t("caseDetail.confirmDelete")}
+                              className="flex-1 cursor-pointer"
                               disabled={deleting}
                               onClick={handleDelete}
                             >
@@ -650,8 +617,8 @@ export default function CaseDetailPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              title="Cancel"
-                              className="flex-1"
+                              title={t("caseDetail.cancel")}
+                              className="flex-1 border-[#EBEBEB] text-[#636363] cursor-pointer"
                               onClick={() => setConfirmDelete(false)}
                             >
                               {t("caseDetail.cancel")}
@@ -662,11 +629,11 @@ export default function CaseDetailPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          title="Delete report"
-                          className="w-full justify-start text-destructive hover:text-destructive"
+                          title={t("caseDetail.deleteReport")}
+                          className="w-full justify-start border-[#EBEBEB] text-red-600 hover:text-red-600 cursor-pointer"
                           onClick={() => setConfirmDelete(true)}
                         >
-                          <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                          <Trash2 className="h-3.5 w-3.5 me-1.5" />
                           {t("caseDetail.deleteReport")}
                         </Button>
                       )}
