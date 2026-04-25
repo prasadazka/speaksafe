@@ -145,27 +145,42 @@ export default function CaseDetailPage() {
     }
   }, [user, isLoading, router]);
 
-  /* Fetch report detail */
-  const fetchReport = useCallback(async () => {
+  /* Fetch report detail (initial load only) */
+  useEffect(() => {
     if (!token || !reportId) return;
-    setLoading(true);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getReport(token, reportId);
+        if (cancelled) return;
+        if (res.success && res.data) {
+          setReport(res.data as ReportDetail);
+        } else {
+          setError(t("caseDetail.reportNotFound"));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : t("caseDetail.failedToLoad"));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token, reportId, t]);
+
+  /* Silent refresh — updates report data without showing the full-page spinner */
+  const refreshReport = useCallback(async () => {
+    if (!token || !reportId) return;
     try {
       const res = await getReport(token, reportId);
       if (res.success && res.data) {
         setReport(res.data as ReportDetail);
-      } else {
-        setError(t("caseDetail.reportNotFound"));
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("caseDetail.failedToLoad"));
-    } finally {
-      setLoading(false);
+    } catch {
+      /* silent */
     }
-  }, [token, reportId, t]);
-
-  useEffect(() => {
-    fetchReport();
-  }, [fetchReport]);
+  }, [token, reportId]);
 
   /* Fetch notes */
   const fetchNotes = useCallback(async () => {
@@ -254,7 +269,7 @@ export default function CaseDetailPage() {
       if (res.success) {
         setNoteContent("");
         await fetchNotes();
-        await fetchReport();
+        await refreshReport();
         await fetchTimeline();
       }
     } catch (err) {
