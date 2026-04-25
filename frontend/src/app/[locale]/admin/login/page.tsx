@@ -11,6 +11,8 @@ import {
   Check,
   KeyRound,
   ArrowLeft,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,8 +51,11 @@ export default function AdminLoginPage() {
   const [totpCode, setTotpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [showTestAccounts, setShowTestAccounts] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -58,8 +63,34 @@ export default function AdminLoginPage() {
     }
   }, [user, isLoading]);
 
+  const validateForm = (): boolean => {
+    let valid = true;
+    setEmailError(null);
+    setPasswordError(null);
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      setEmailError(t("login.emailRequired"));
+      valid = false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError(t("login.emailInvalid"));
+      valid = false;
+    }
+
+    if (!password) {
+      setPasswordError(t("login.passwordRequired"));
+      valid = false;
+    } else if (password.length < 6) {
+      setPasswordError(t("login.passwordMinLength"));
+      valid = false;
+    }
+
+    return valid;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
     setLoading(true);
     setError(null);
     try {
@@ -166,7 +197,7 @@ export default function AdminLoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-[52px] bg-[#00653E] hover:bg-[#005232] text-white text-lg font-semibold rounded-[4px]"
+                className="w-full h-[52px] bg-[#00653E] hover:bg-[#005232] text-white text-lg font-semibold rounded-[4px] cursor-pointer"
                 disabled={loading || totpCode.length < 6}
               >
                 {loading ? (
@@ -237,28 +268,51 @@ export default function AdminLoginPage() {
                 onChange={(e) => {
                   setEmail(e.target.value);
                   setError(null);
+                  setEmailError(null);
                 }}
                 placeholder={t("login.emailPlaceholder")}
-                className="h-[59px] text-lg border-[#BEBEBE] rounded-[10px] bg-white text-black placeholder:text-[#BEBEBE]"
+                className={`h-[59px] text-lg rounded-[10px] bg-white text-black placeholder:text-[#BEBEBE] ${emailError ? "border-red-400" : "border-[#BEBEBE]"}`}
                 required
               />
+              {emailError && (
+                <p className="mt-1.5 text-sm text-red-500">{emailError}</p>
+              )}
             </div>
 
             <div>
               <label className="text-lg font-medium text-black mb-2 block">
                 {t("login.passwordLabel")}
               </label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError(null);
-                }}
-                placeholder={t("login.passwordPlaceholder")}
-                className="h-[59px] text-lg border-[#BEBEBE] rounded-[10px] bg-white text-black placeholder:text-[#BEBEBE]"
-                required
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                    setPasswordError(null);
+                  }}
+                  placeholder={t("login.passwordPlaceholder")}
+                  className={`h-[59px] text-lg rounded-[10px] bg-white text-black placeholder:text-[#BEBEBE] pe-12 ${passwordError ? "border-red-400" : "border-[#BEBEBE]"}`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute end-4 top-1/2 -translate-y-1/2 text-[#909090] hover:text-black transition-colors cursor-pointer"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              {passwordError && (
+                <p className="mt-1.5 text-sm text-red-500">{passwordError}</p>
+              )}
             </div>
 
             {error && (
@@ -269,7 +323,7 @@ export default function AdminLoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-[52px] bg-[#00653E] hover:bg-[#005232] text-white text-lg font-semibold rounded-[4px] gap-2"
+              className="w-full h-[52px] bg-[#00653E] hover:bg-[#005232] text-white text-lg font-semibold rounded-[4px] gap-2 cursor-pointer"
               disabled={loading}
             >
               {loading ? (

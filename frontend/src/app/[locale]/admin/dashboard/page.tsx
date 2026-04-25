@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -28,8 +29,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getReports,
@@ -80,11 +79,13 @@ function getInitials(name: string) {
     .slice(0, 2);
 }
 
-const roleBadgeColor: Record<string, string> = {
-  ADMIN: "bg-red-500/10 text-red-400 border-red-500/20",
-  COMPLIANCE_OFFICER: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  VIEWER: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-};
+/* ── Stat card illustration mapping ── */
+const STAT_CARDS = [
+  { illustration: "/images/admin/card-report.png", icon: FileText },
+  { illustration: "/images/admin/card-case.png", icon: AlertTriangle },
+  { illustration: "/images/admin/card-investigate.png", icon: Search },
+  { illustration: "/images/admin/card-closed.png", icon: CheckCircle2 },
+];
 
 export default function DashboardPage() {
   const { user, token, isLoading, logout, hasRole } = useAuth();
@@ -172,118 +173,127 @@ export default function DashboardPage() {
 
   const totalPages = meta ? Math.ceil(meta.total / meta.limit) : 1;
 
+  /* Stats data */
+  const stats = [
+    {
+      label: t("dashboard.stats.totalReports"),
+      value: total,
+      trend: t("dashboard.stats.active", {
+        count: openCount + investigatingCount + underReviewCount,
+      }),
+    },
+    {
+      label: t("dashboard.stats.openCases"),
+      value: openCount,
+      trend: t("dashboard.stats.critical", { count: criticalCount }),
+    },
+    {
+      label: t("dashboard.stats.underInvestigation"),
+      value: investigatingCount,
+      trend: t("dashboard.stats.inReview", { count: underReviewCount }),
+    },
+    {
+      label: t("dashboard.stats.closed"),
+      value: closedCount,
+      trend: t("dashboard.stats.ofTotal", { total }),
+    },
+  ];
+
   if (isLoading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F9FDFB]">
+        <Loader2 className="h-6 w-6 animate-spin text-[#9B9B9B]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Top Nav */}
-      <header className="border-b border-border bg-card sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+    <div className="min-h-screen flex flex-col bg-[#F9FDFB]">
+      {/* ── Top Navbar — Figma: 89px, white, border-bottom #E5E5E5 ── */}
+      <header className="sticky top-0 z-40 bg-white border-b border-[#E5E5E5]">
+        <div className="mx-auto px-6 lg:px-12 h-[70px] lg:h-[89px] flex items-center justify-between">
+          {/* Left: Brand + Divider + Dashboard */}
+          <div className="flex items-center gap-0">
             <Link
               href="/admin/dashboard"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 pe-6"
             >
-              <Shield className="h-5 w-5 text-primary" />
-              <span className="font-bold tracking-tight">{tc("brand")}</span>
+              <Shield className="h-6 w-6 text-[#00653E]" />
+              <span className="text-xl lg:text-2xl font-bold tracking-tight text-[#00653E] font-sans">
+                {tc("brand")}
+              </span>
             </Link>
-            <nav className="hidden md:flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-foreground font-medium"
-              >
-                {t("dashboard.title")}
-              </Button>
-            </nav>
+            <div className="hidden md:block w-px h-9 bg-[#D9D9D9] mx-2" />
+            <span className="hidden md:block text-lg lg:text-xl font-semibold text-[#636363] ps-4">
+              {t("dashboard.title")}
+            </span>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge
-              variant="outline"
-              className={`${roleBadgeColor[user.role]} border text-xs`}
-            >
-              {tc(`roles.${user.role}`)}
-            </Badge>
-            <Separator orientation="vertical" className="h-6" />
-            <div className="flex items-center gap-2">
-              <Avatar className="h-7 w-7">
-                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+
+          {/* Right: User + Divider + Logout */}
+          <div className="flex items-center gap-0">
+            <div className="flex items-center gap-2.5 pe-4">
+              <div className="h-7 w-7 rounded-full bg-[#00653E] flex items-center justify-center">
+                <span className="text-[12px] font-normal text-white">
                   {getInitials(user.full_name)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium hidden sm:block">
+                </span>
+              </div>
+              <span className="hidden sm:block text-base text-[#00653E]">
                 {user.full_name}
               </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={logout}>
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <div className="hidden md:block w-px h-9 bg-[#D9D9D9] mx-2" />
+            <button
+              onClick={logout}
+              className="flex items-center gap-1.5 ps-4 text-[#636363] hover:text-black transition-colors cursor-pointer"
+              aria-label="Logout"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {[
-            {
-              label: t("dashboard.stats.totalReports"),
-              value: total,
-              icon: FileText,
-              trend: t("dashboard.stats.active", {
-                count: openCount + investigatingCount + underReviewCount,
-              }),
-            },
-            {
-              label: t("dashboard.stats.openCases"),
-              value: openCount,
-              icon: AlertTriangle,
-              trend: t("dashboard.stats.critical", { count: criticalCount }),
-            },
-            {
-              label: t("dashboard.stats.underInvestigation"),
-              value: investigatingCount,
-              icon: Search,
-              trend: t("dashboard.stats.inReview", { count: underReviewCount }),
-            },
-            {
-              label: t("dashboard.stats.closed"),
-              value: closedCount,
-              icon: CheckCircle2,
-              trend: t("dashboard.stats.ofTotal", { total }),
-            },
-          ].map((stat) => (
-            <Card key={stat.label}>
-              <CardContent className="pt-5 pb-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      {stat.label}
-                    </p>
-                    <p className="text-2xl font-bold mt-1">{stat.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" /> {stat.trend}
-                    </p>
-                  </div>
-                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <stat.icon className="h-4.5 w-4.5 text-primary" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      <main className="flex-1 mx-auto w-full px-4 lg:px-12 py-6 max-w-[1920px]">
+        {/* ── Stats Row — Figma: 4 cards, 440px each, 199px tall ── */}
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5 mb-8">
+          {stats.map((stat, i) => {
+            const cardMeta = STAT_CARDS[i];
+            return (
+              <div
+                key={stat.label}
+                className="relative overflow-hidden bg-white border border-[#EBEBEB] rounded-[10px] shadow-[0_4px_15px_rgba(110,110,110,0.1)] p-5 lg:p-6 min-h-[160px] lg:min-h-[199px]"
+              >
+                {/* Text content */}
+                <p className="text-sm lg:text-lg text-[#9B9B9B]">
+                  {stat.label}
+                </p>
+                <p className="text-4xl lg:text-[56px] font-bold text-black mt-1 lg:mt-2 leading-tight">
+                  {stat.value}
+                </p>
+                <p className="text-xs lg:text-base font-semibold text-[#27693F] mt-2 lg:mt-3 flex items-center gap-1">
+                  <TrendingUp className="h-4 w-4 lg:h-5 lg:w-5" />
+                  {stat.trend}
+                </p>
+
+                {/* 3D illustration — positioned right, overlapping card edge */}
+                <Image
+                  src={cardMeta.illustration}
+                  alt=""
+                  width={120}
+                  height={160}
+                  className="absolute -bottom-2 end-0 w-[80px] lg:w-[120px] h-auto opacity-90 pointer-events-none"
+                  aria-hidden="true"
+                />
+              </div>
+            );
+          })}
         </div>
 
+        {/* ── Reports + Sidebar — Same design as before per Figma note ── */}
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Reports Table */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -301,7 +311,7 @@ export default function DashboardPage() {
                     </div>
                     <select
                       aria-label="Filter by status"
-                      className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                      className="h-8 rounded-md border border-input bg-background px-2 text-sm cursor-pointer"
                       value={statusFilter}
                       onChange={(e) => {
                         setStatusFilter(
@@ -434,6 +444,7 @@ export default function DashboardPage() {
                         size="sm"
                         disabled={page <= 1}
                         onClick={() => setPage((p) => p - 1)}
+                        className="cursor-pointer"
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
@@ -442,6 +453,7 @@ export default function DashboardPage() {
                         size="sm"
                         disabled={page >= totalPages}
                         onClick={() => setPage((p) => p + 1)}
+                        className="cursor-pointer"
                       >
                         <ChevronRight className="h-4 w-4" />
                       </Button>
@@ -455,7 +467,7 @@ export default function DashboardPage() {
           {/* Right Sidebar */}
           <div className="space-y-6">
             {/* Status Breakdown */}
-            <Card>
+            <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" /> {t("dashboard.statusBreakdown")}
@@ -508,7 +520,7 @@ export default function DashboardPage() {
 
             {/* Recent Activity — only for ADMIN & COMPLIANCE_OFFICER */}
             {hasRole("ADMIN", "COMPLIANCE_OFFICER") && (
-              <Card>
+              <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Clock className="h-4 w-4" /> {t("dashboard.recentActivity")}
