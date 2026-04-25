@@ -1,8 +1,9 @@
+import uuid
 from datetime import datetime, timezone
 
 import pyotp
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, require_role
@@ -184,8 +185,6 @@ async def list_users(
         select(AdminUser).order_by(AdminUser.created_at.desc()).offset(offset).limit(limit)
     )
     users = result.scalars().all()
-
-    from sqlalchemy import func as sa_func
 
     total_result = await db.execute(select(sa_func.count(AdminUser.id)))
     total = total_result.scalar() or 0
