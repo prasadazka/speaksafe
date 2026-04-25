@@ -28,8 +28,10 @@ def _get_key() -> bytes:
     raw = settings.ENCRYPTION_KEY
     if not raw:
         raise RuntimeError(
-            "ENCRYPTION_KEY is not set. "
-            "Generate one with: python -c \"import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())\""
+            "ENCRYPTION_KEY is not set. Generate one with: "
+            "python -c \"import os,base64; "
+            "print(base64.urlsafe_b64encode(os.urandom(32))"
+            ".decode())\""
         )
     try:
         key = base64.urlsafe_b64decode(raw)
