@@ -1,6 +1,7 @@
 {
   "login": {
     "title": "Admin Portal",
+    "welcomeTitle": "Welcome back, Admin",
     "subtitle": "Sign in to manage reports",
     "emailLabel": "Email",
     "emailPlaceholder": "admin@sawtsafe.io",

@@ -1,6 +1,7 @@
 {
   "login": {
     "title": "بوابة الإدارة",
+    "welcomeTitle": "مرحبًا بعودتك، مدير",
     "subtitle": "سجّل الدخول لإدارة البلاغات",
     "emailLabel": "البريد الإلكتروني",
     "emailPlaceholder": "admin@sawtsafe.io",
