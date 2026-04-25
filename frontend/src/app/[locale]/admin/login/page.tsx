@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Shield, LogIn, ChevronDown, Copy, Check } from "lucide-react";
+import { Shield, LogIn, ChevronDown, Copy, Check, KeyRound, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,9 +40,10 @@ export default function AdminLoginPage() {
     },
   ];
 
-  const { login, user, isLoading } = useAuth();
+  const { login, user, isLoading, mfaState, clearMfa } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [totpCode, setTotpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTestAccounts, setShowTestAccounts] = useState(false);
@@ -68,6 +69,26 @@ export default function AdminLoginPage() {
     }
   };
 
+  const handleMfaVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaState) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await login(mfaState.email, mfaState.password, totpCode);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("login.loginFailed"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    clearMfa();
+    setTotpCode("");
+    setError(null);
+  };
+
   const fillCredentials = (acct: (typeof TEST_ACCOUNTS)[number]) => {
     setEmail(acct.email);
     setPassword(acct.password);
@@ -88,6 +109,86 @@ export default function AdminLoginPage() {
     );
   }
 
+  /* ── MFA Code Entry Screen ── */
+  if (mfaState?.required) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
+        <Link href="/" className="flex items-center gap-2 mb-8">
+          <Shield className="h-8 w-8 text-primary" />
+          <span className="text-2xl font-bold tracking-tight">{tc("brand")}</span>
+        </Link>
+
+        <Card className="w-full max-w-sm">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <KeyRound className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-xl">{t("login.mfaTitle")}</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {t("login.mfaSubtitle")}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleMfaVerify} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  {t("login.mfaCodeLabel")}
+                </label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={totpCode}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "");
+                    setTotpCode(val);
+                    setError(null);
+                  }}
+                  placeholder="000000"
+                  className="text-center text-2xl tracking-[0.5em] font-mono"
+                  autoFocus
+                  required
+                />
+              </div>
+              {error && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
+                  {error}
+                </div>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={loading || totpCode.length < 6}
+              >
+                {loading ? (
+                  <span className="animate-pulse">{t("login.verifying")}</span>
+                ) : (
+                  t("login.verify")
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={handleBackToLogin}
+              >
+                <ArrowLeft className="h-4 w-4 me-2" />
+                {t("login.backToLogin")}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <p className="mt-6 text-xs text-muted-foreground">
+          {t("login.protectedBy")}
+        </p>
+      </div>
+    );
+  }
+
+  /* ── Normal Login Screen ── */
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
       <Link href="/" className="flex items-center gap-2 mb-8">

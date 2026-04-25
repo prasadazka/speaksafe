@@ -10,6 +10,7 @@ export interface AdminProfile {
   full_name: string;
   role: AdminRole;
   is_active: boolean;
+  mfa_enabled: boolean;
   last_login_at: string | null;
   created_at: string;
 }
@@ -119,16 +120,23 @@ async function handleResponse<T>(res: Response): Promise<ApiResponse<T>> {
 
 /* ── Auth ── */
 
+export interface MFARequiredResponse {
+  mfa_required: true;
+}
+
 export async function adminLogin(
   email: string,
   password: string,
-): Promise<ApiResponse<TokenResponse>> {
+  totp_code?: string,
+): Promise<ApiResponse<TokenResponse | MFARequiredResponse>> {
+  const body: Record<string, string> = { email, password };
+  if (totp_code) body.totp_code = totp_code;
   const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(body),
   });
-  return handleResponse<TokenResponse>(res);
+  return handleResponse<TokenResponse | MFARequiredResponse>(res);
 }
 
 export async function getMe(

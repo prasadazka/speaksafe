@@ -18,11 +18,19 @@ import {
 
 const TOKEN_KEY = "sawtsafe_admin_token";
 
+export interface MFAState {
+  required: boolean;
+  email: string;
+  password: string;
+}
+
 interface AuthContextValue {
   user: AdminProfile | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  mfaState: MFAState | null;
+  login: (email: string, password: string, totpCode?: string) => Promise<void>;
+  clearMfa: () => void;
   logout: () => void;
   hasRole: (...roles: AdminRole[]) => boolean;
 }
@@ -33,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AdminProfile | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mfaState, setMfaState] = useState<MFAState | null>(null);
   const router = useRouter();
 
   /* Restore session on mount */
@@ -59,12 +68,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(
-    async (email: string, password: string) => {
-      const res = await adminLogin(email, password);
+    async (email: string, password: string, totpCode?: string) => {
+      const res = await adminLogin(email, password, totpCode);
       if (!res.success || !res.data) {
         throw new Error(res.error ?? "Login failed");
       }
-      const t = (res.data as { access_token: string }).access_token;
+
+      // Check if MFA is required
+      const data = res.data as unknown as Record<string, unknown>;
+      if (data.mfa_required) {
+        setMfaState({ required: true, email, password });
+        return;
+      }
+
+      // Login successful
+      setMfaState(null);
+      const t = (data as { access_token: string }).access_token;
       localStorage.setItem(TOKEN_KEY, t);
       setToken(t);
 
@@ -77,10 +96,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [router],
   );
 
+  const clearMfa = useCallback(() => {
+    setMfaState(null);
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
+    setMfaState(null);
     router.push("/admin/login");
   }, [router]);
 
@@ -93,8 +117,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ user, token, isLoading, login, logout, hasRole }),
-    [user, token, isLoading, login, logout, hasRole],
+    () => ({ user, token, isLoading, mfaState, login, clearMfa, logout, hasRole }),
+    [user, token, isLoading, mfaState, login, clearMfa, logout, hasRole],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

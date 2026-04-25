@@ -5,6 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
+from app.core.encryption import decrypt, encrypt
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
 from app.models.audit_log import AuditAction
@@ -22,6 +23,16 @@ from app.schemas.report import (
 from app.services.audit import log_action
 
 router = APIRouter(prefix="/api/v1/reports", tags=["Reports"])
+
+
+def _decrypt_report_detail(report: Report) -> dict:
+    """Serialize a Report to dict with sensitive fields decrypted."""
+    data = ReportDetail.model_validate(report).model_dump(mode="json")
+    if data.get("description"):
+        data["description"] = decrypt(data["description"])
+    if data.get("resolution"):
+        data["resolution"] = decrypt(data["resolution"])
+    return data
 
 
 # ── PUBLIC: Submit report (no auth) ──
@@ -48,7 +59,7 @@ async def submit_report(
         tracking_id=tid,
         category=payload.category,
         severity=payload.severity,
-        description=payload.description,
+        description=encrypt(payload.description),
         occurred_at=payload.occurred_at,
         location=payload.location,
     )
@@ -143,9 +154,7 @@ async def get_report(
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
 
-    return ApiResponse(
-        data=ReportDetail.model_validate(report).model_dump(mode="json"),
-    )
+    return ApiResponse(data=_decrypt_report_detail(report))
 
 
 # ── ADMIN: Update status ──
@@ -173,9 +182,7 @@ async def update_status(
     await db.commit()
     await db.refresh(report)
 
-    return ApiResponse(
-        data=ReportDetail.model_validate(report).model_dump(mode="json"),
-    )
+    return ApiResponse(data=_decrypt_report_detail(report))
 
 
 # ── ADMIN: Update severity ──
@@ -203,9 +210,7 @@ async def update_severity(
     await db.commit()
     await db.refresh(report)
 
-    return ApiResponse(
-        data=ReportDetail.model_validate(report).model_dump(mode="json"),
-    )
+    return ApiResponse(data=_decrypt_report_detail(report))
 
 
 # ── ADMIN: Soft delete ──

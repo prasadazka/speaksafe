@@ -28,6 +28,8 @@ class AdminUser(Base):
         Enum(AdminRole, name="admin_role"), nullable=False, default=AdminRole.VIEWER
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    mfa_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
     last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

@@ -18,6 +18,13 @@ class AdminRegister(BaseModel):
 class AdminLogin(BaseModel):
     email: EmailStr
     password: str
+    totp_code: str | None = None
+
+
+# ── MFA ──
+
+class MFAVerify(BaseModel):
+    code: str = Field(min_length=6, max_length=6)
 
 
 # ── Response ──
@@ -27,12 +34,18 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class MFASetupResponse(BaseModel):
+    secret: str
+    otpauth_url: str
+
+
 class AdminProfile(BaseModel):
     id: uuid.UUID
     email: str
     full_name: str
     role: AdminRole
     is_active: bool
+    mfa_enabled: bool
     last_login_at: datetime | None
     created_at: datetime
 

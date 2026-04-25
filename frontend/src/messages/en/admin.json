@@ -11,7 +11,13 @@
     "loginFailed": "Login failed",
     "testCredentials": "Test Credentials",
     "use": "Use",
-    "protectedBy": "Protected by enterprise-grade encryption"
+    "protectedBy": "Protected by enterprise-grade encryption",
+    "mfaTitle": "Two-Factor Authentication",
+    "mfaSubtitle": "Enter the 6-digit code from your authenticator app",
+    "mfaCodeLabel": "Authentication Code",
+    "verifying": "Verifying...",
+    "verify": "Verify",
+    "backToLogin": "Back to Login"
   },
   "dashboard": {
     "title": "Dashboard",

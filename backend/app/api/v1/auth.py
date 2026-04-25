@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+import pyotp
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +10,14 @@ from app.core.security import create_access_token, hash_password, verify_passwor
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
 from app.models.audit_log import AuditAction
-from app.schemas.auth import AdminLogin, AdminProfile, AdminRegister, TokenResponse
+from app.schemas.auth import (
+    AdminLogin,
+    AdminProfile,
+    AdminRegister,
+    MFASetupResponse,
+    MFAVerify,
+    TokenResponse,
+)
 from app.schemas.report import ApiResponse
 from app.services.audit import log_action
 
@@ -62,6 +70,16 @@ async def login(
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    # MFA check
+    if user.mfa_enabled and user.mfa_secret:
+        if not payload.totp_code:
+            return ApiResponse(
+                data={"mfa_required": True},
+            )
+        totp = pyotp.TOTP(user.mfa_secret)
+        if not totp.verify(payload.totp_code, valid_window=1):
+            raise HTTPException(status_code=401, detail="Invalid MFA code")
+
     user.last_login_at = datetime.now(timezone.utc)
     await log_action(
         db, AuditAction.ADMIN_LOGIN, "admin_user", str(user.id), actor=user,
@@ -82,3 +100,67 @@ async def get_me(
     return ApiResponse(
         data=AdminProfile.model_validate(user).model_dump(mode="json"),
     )
+
+
+# ── MFA: Generate setup secret + QR URL ──
+@router.post("/mfa/setup", response_model=ApiResponse)
+async def mfa_setup(
+    db: AsyncSession = Depends(get_db),
+    user: AdminUser = Depends(get_current_user),
+) -> ApiResponse:
+    if user.mfa_enabled:
+        raise HTTPException(status_code=400, detail="MFA is already enabled")
+
+    secret = pyotp.random_base32()
+    user.mfa_secret = secret
+    await db.commit()
+
+    totp = pyotp.TOTP(secret)
+    otpauth_url = totp.provisioning_uri(name=user.email, issuer_name="Sawt Safe")
+
+    return ApiResponse(
+        data=MFASetupResponse(secret=secret, otpauth_url=otpauth_url).model_dump(),
+    )
+
+
+# ── MFA: Verify code and enable ──
+@router.post("/mfa/verify", response_model=ApiResponse)
+async def mfa_verify(
+    payload: MFAVerify,
+    db: AsyncSession = Depends(get_db),
+    user: AdminUser = Depends(get_current_user),
+) -> ApiResponse:
+    if user.mfa_enabled:
+        raise HTTPException(status_code=400, detail="MFA is already enabled")
+    if not user.mfa_secret:
+        raise HTTPException(status_code=400, detail="Call /mfa/setup first")
+
+    totp = pyotp.TOTP(user.mfa_secret)
+    if not totp.verify(payload.code, valid_window=1):
+        raise HTTPException(status_code=400, detail="Invalid code. Try again.")
+
+    user.mfa_enabled = True
+    await db.commit()
+
+    return ApiResponse(data={"message": "MFA enabled successfully"})
+
+
+# ── MFA: Disable ──
+@router.post("/mfa/disable", response_model=ApiResponse)
+async def mfa_disable(
+    payload: MFAVerify,
+    db: AsyncSession = Depends(get_db),
+    user: AdminUser = Depends(get_current_user),
+) -> ApiResponse:
+    if not user.mfa_enabled:
+        raise HTTPException(status_code=400, detail="MFA is not enabled")
+
+    totp = pyotp.TOTP(user.mfa_secret)
+    if not totp.verify(payload.code, valid_window=1):
+        raise HTTPException(status_code=400, detail="Invalid code")
+
+    user.mfa_enabled = False
+    user.mfa_secret = None
+    await db.commit()
+
+    return ApiResponse(data={"message": "MFA disabled"})
