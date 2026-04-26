@@ -71,6 +71,7 @@
     "trackingId": "Tracking ID",
     "category": "Category",
     "severityLabel": "Severity",
+    "sentimentLabel": "Sentiment",
     "statusLabel": "Status",
     "resolutionType": "Resolution",
     "submittedDate": "Submitted",

@@ -1,9 +1,20 @@
 import uuid
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from app.models.report import ReportCategory, ReportStatus, ResolutionType, Severity  # noqa: I001
+
+
+class SentimentData(BaseModel):
+    tone: Literal[
+        "FEAR_THREAT", "DISTRESS", "ANGER",
+        "DESPERATION", "CONCERN", "NEUTRAL",
+    ]
+    urgency: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+    summary: str = Field(max_length=300)
+
 
 # ── Request ──
 
@@ -11,6 +22,7 @@ class ReportCreate(BaseModel):
     category: ReportCategory
     description: str = Field(min_length=10, max_length=5000)
     severity: Severity = Severity.LOW
+    sentiment: SentimentData | None = None
     occurred_at: date | None = None
     location: str | None = Field(None, max_length=200)
 
@@ -58,6 +70,7 @@ class ReportDetail(BaseModel):
     tracking_id: str
     category: ReportCategory
     severity: Severity
+    sentiment: dict | None = None
     description: str
     occurred_at: date | None
     location: str | None
@@ -83,6 +96,7 @@ class ReportListItem(BaseModel):
     tracking_id: str
     category: ReportCategory
     severity: Severity
+    sentiment: dict | None = None
     status: ReportStatus
     description: str
     resolution_type: ResolutionType | None = None

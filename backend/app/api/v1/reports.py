@@ -111,6 +111,7 @@ async def submit_report(
         tracking_id=tid,
         category=payload.category,
         severity=payload.severity,
+        sentiment=payload.sentiment.model_dump() if payload.sentiment else None,
         description=encrypt(payload.description),
         occurred_at=payload.occurred_at,
         location=payload.location,

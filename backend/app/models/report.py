@@ -73,6 +73,9 @@ class Report(Base):
     severity: Mapped[Severity] = mapped_column(
         Enum(Severity, name="severity"), nullable=False, default=Severity.LOW
     )
+    sentiment: Mapped[dict | None] = mapped_column(
+        JSONB, nullable=True, default=None
+    )
     description: Mapped[str] = mapped_column(Text, nullable=False)
     occurred_at: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     location: Mapped[str | None] = mapped_column(String(200), nullable=True)

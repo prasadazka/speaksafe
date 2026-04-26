@@ -71,6 +71,7 @@
     "trackingId": "رمز التتبع",
     "category": "الفئة",
     "severityLabel": "الخطورة",
+    "sentimentLabel": "المشاعر",
     "statusLabel": "الحالة",
     "resolutionType": "نتيجة التحقيق",
     "submittedDate": "تاريخ التقديم",

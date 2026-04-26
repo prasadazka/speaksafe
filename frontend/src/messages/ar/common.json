@@ -55,6 +55,14 @@
     "INCONCLUSIVE": "غير حاسم",
     "REFERRED": "مُحال"
   },
+  "sentiment": {
+    "FEAR_THREAT": "خوف / تهديد",
+    "DISTRESS": "ضائقة",
+    "ANGER": "غضب",
+    "DESPERATION": "يأس",
+    "CONCERN": "قلق",
+    "NEUTRAL": "محايد"
+  },
   "roles": {
     "ADMIN": "مدير",
     "COMPLIANCE_OFFICER": "مسؤول الامتثال",

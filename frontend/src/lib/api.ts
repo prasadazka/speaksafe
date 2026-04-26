@@ -15,10 +15,17 @@ export interface ReportSubmitted {
   message: string;
 }
 
+export interface SentimentResult {
+  tone: string;
+  urgency: string;
+  summary: string;
+}
+
 export interface ReportPayload {
   category: string;
   description: string;
   severity?: string;
+  sentiment?: SentimentResult | null;
   occurred_at?: string | null;
   location?: string | null;
 }
@@ -43,6 +50,7 @@ export async function submitReport(
     description: payload.description,
   };
   if (payload.severity) body.severity = payload.severity;
+  if (payload.sentiment) body.sentiment = payload.sentiment;
   if (payload.occurred_at) body.occurred_at = payload.occurred_at;
   if (payload.location) body.location = payload.location;
 
@@ -76,6 +84,22 @@ export async function scoreSeverity(
     return data.severity ?? "MEDIUM";
   } catch {
     return "MEDIUM"; // Fallback — never block submission
+  }
+}
+
+export async function analyzeSentiment(
+  description: string,
+): Promise<SentimentResult | null> {
+  try {
+    const res = await fetch("/api/ai/sentiment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description }),
+    });
+    const data = await res.json();
+    return data.sentiment ?? null;
+  } catch {
+    return null; // Fallback — never block submission
   }
 }
 

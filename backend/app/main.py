@@ -48,6 +48,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS"
             " prev_hash VARCHAR(64)"
         ))
+        # Add sentiment JSONB column to reports if missing
+        await conn.execute(text(
+            "ALTER TABLE reports ADD COLUMN IF NOT EXISTS"
+            " sentiment JSONB"
+        ))
         # Add encryption_iv column to evidence if missing
         await conn.execute(text(
             "ALTER TABLE evidence ADD COLUMN IF NOT EXISTS"

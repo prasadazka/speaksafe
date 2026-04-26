@@ -57,6 +57,7 @@ import {
   uploadEvidence,
   formatDescription,
   scoreSeverity,
+  analyzeSentiment,
 } from "@/lib/api";
 import { generateReportPdf } from "@/lib/generate-pdf";
 import { cn } from "@/lib/utils";
@@ -221,13 +222,17 @@ export default function ReportPage() {
     try {
       const data = form.getValues();
 
-      // AI severity scoring (runs in parallel-safe manner, never blocks)
-      const severity = await scoreSeverity(data.description, data.category);
+      // AI severity + sentiment scoring — run in PARALLEL, never block
+      const [severity, sentiment] = await Promise.all([
+        scoreSeverity(data.description, data.category),
+        analyzeSentiment(data.description),
+      ]);
 
       const res = await submitReport({
         category: data.category,
         description: data.description,
         severity,
+        sentiment,
         occurred_at: data.occurredAt || null,
         location: data.location || null,
       });

@@ -55,6 +55,14 @@
     "INCONCLUSIVE": "Inconclusive",
     "REFERRED": "Referred"
   },
+  "sentiment": {
+    "FEAR_THREAT": "Fear / Threat",
+    "DISTRESS": "Distress",
+    "ANGER": "Anger",
+    "DESPERATION": "Desperation",
+    "CONCERN": "Concern",
+    "NEUTRAL": "Neutral"
+  },
   "roles": {
     "ADMIN": "Admin",
     "COMPLIANCE_OFFICER": "Officer",

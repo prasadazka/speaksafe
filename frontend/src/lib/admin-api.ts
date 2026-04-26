@@ -36,11 +36,18 @@ export type Severity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type ReportStatus = "OPEN" | "UNDER_REVIEW" | "INVESTIGATING" | "CLOSED";
 export type ResolutionType = "SUBSTANTIATED" | "UNSUBSTANTIATED" | "INCONCLUSIVE" | "REFERRED";
 
+export interface SentimentData {
+  tone: string;
+  urgency: string;
+  summary: string;
+}
+
 export interface ReportListItem {
   id: string;
   tracking_id: string;
   category: ReportCategory;
   severity: Severity;
+  sentiment: SentimentData | null;
   status: ReportStatus;
   description: string;
   resolution_type: ResolutionType | null;

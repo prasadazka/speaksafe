@@ -50,6 +50,15 @@ const severityColor: Record<string, string> = {
   CRITICAL: "bg-red-100 text-red-700 border-red-200",
 };
 
+const sentimentColor: Record<string, string> = {
+  FEAR_THREAT: "bg-red-100 text-red-700 border-red-200",
+  DISTRESS: "bg-rose-100 text-rose-700 border-rose-200",
+  ANGER: "bg-orange-100 text-orange-700 border-orange-200",
+  DESPERATION: "bg-amber-100 text-amber-700 border-amber-200",
+  CONCERN: "bg-sky-100 text-sky-700 border-sky-200",
+  NEUTRAL: "bg-gray-100 text-gray-600 border-gray-200",
+};
+
 const statusColor: Record<string, string> = {
   OPEN: "bg-blue-100 text-blue-700 border-blue-200",
   UNDER_REVIEW: "bg-amber-100 text-amber-700 border-amber-200",
@@ -419,6 +428,9 @@ export default function DashboardPage() {
                             Severity
                           </th>
                           <th className="text-left font-medium text-muted-foreground px-4 py-2.5">
+                            Sentiment
+                          </th>
+                          <th className="text-left font-medium text-muted-foreground px-4 py-2.5">
                             Status
                           </th>
                           <th className="text-left font-medium text-muted-foreground px-4 py-2.5">
@@ -456,6 +468,22 @@ export default function DashboardPage() {
                               >
                                 {tc(`severity.${r.severity}`)}
                               </Badge>
+                            </td>
+                            <td className="px-4 py-3">
+                              {r.sentiment ? (
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    (sentimentColor[r.sentiment.tone] ?? "bg-gray-100 text-gray-600 border-gray-200") +
+                                    " border text-xs"
+                                  }
+                                  title={r.sentiment.summary}
+                                >
+                                  {tc(`sentiment.${r.sentiment.tone}`)}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-1.5 flex-wrap">
