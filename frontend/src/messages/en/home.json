@@ -140,11 +140,11 @@
     },
     "patterns": {
       "title": "Pattern Intelligence",
-      "desc": "AI identifies repeated behavior, tracks related cases, and surfaces actionable insights \u2014 helping compliance teams see the bigger picture and respond decisively."
+      "desc": "Automatically connects related reports, detects recurring misconduct patterns, and surfaces cross-case insights \u2014 so compliance teams can identify systemic issues before they escalate."
     },
     "sentiment": {
-      "title": "Urgency Detection",
-      "desc": "Picks up distress signals in a reporter\u2019s language. Fearful or urgent submissions are flagged and escalated automatically."
+      "title": "Emotional Urgency Detection",
+      "desc": "Reads between the lines to detect fear, distress, and desperation in a reporter\u2019s own words. High-emotion reports are automatically flagged so the most vulnerable reporters get attention first."
     },
     "liveBadge": "Live",
     "comingSoonBadge": "Coming Soon"

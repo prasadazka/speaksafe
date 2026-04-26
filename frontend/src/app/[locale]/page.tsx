@@ -44,8 +44,8 @@ const complianceBadges = [
 const architectureIcons = [Network, Database, KeyRound, Scale];
 const orgIcons = [Users, Zap, FileText, Scale, Globe, ShieldCheck];
 const complianceBottomIcons = [Timer, CheckCircle2, Database];
-const aiComingSoonIcons = [GitCompareArrows, HeartPulse];
-const aiComingSoonKeys = ["patterns", "sentiment"] as const;
+const aiLiveExtraIcons = [GitCompareArrows, HeartPulse];
+const aiLiveExtraKeys = ["patterns", "sentiment"] as const;
 
 /* ── Page ── */
 
@@ -589,30 +589,29 @@ export default async function HomePage({
               </StaggerItem>
             </StaggerContainer>
 
-            {/* Coming Soon cards — 2 features */}
+            {/* Additional live AI features */}
             <StaggerContainer stagger={0.12} className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-              {aiComingSoonKeys.map((key, i) => {
-                const Icon = aiComingSoonIcons[i];
+              {aiLiveExtraKeys.map((key, i) => {
+                const Icon = aiLiveExtraIcons[i];
                 return (
                   <StaggerItem key={key}>
                     <div className="bg-[#0A2A1E] rounded-2xl border border-white/[0.06] p-7 h-full relative overflow-hidden">
                       {/* Ambient glow */}
                       <div className="absolute top-0 right-0 w-24 h-24 bg-[#00653E]/5 rounded-full blur-2xl pointer-events-none" />
 
-                      <div className="inline-flex items-center rounded-full border border-white/10 px-3 py-0.5 mb-5">
-                        <span className="text-white/40 text-xs font-semibold">
-                          {t("ai.comingSoonBadge")}
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="h-11 w-11 rounded-xl bg-[#00653E]/10 flex items-center justify-center">
+                          <Icon className="h-5 w-5 text-[#00653E]" />
+                        </div>
+                        <span className="rounded-full bg-[#00653E]/20 text-[#00653E] px-3 py-0.5 text-xs font-semibold">
+                          {t("ai.liveBadge")}
                         </span>
-                      </div>
-
-                      <div className="h-11 w-11 rounded-xl bg-[#00653E]/10 flex items-center justify-center mb-4">
-                        <Icon className="h-5 w-5 text-[#00653E]" />
                       </div>
 
                       <h3 className="text-lg font-bold text-white mb-2">
                         {t(`ai.${key}.title`)}
                       </h3>
-                      <p className="text-sm text-white/40 leading-relaxed">
+                      <p className="text-sm text-white/50 leading-relaxed">
                         {t(`ai.${key}.desc`)}
                       </p>
                     </div>
