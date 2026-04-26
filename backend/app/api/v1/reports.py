@@ -15,7 +15,6 @@ from app.api.v1.ws import manager as ws_manager
 from app.core.config import settings
 from app.core.encryption import decrypt, encrypt
 from app.core.rate_limit import (
-    RATE_ERASURE,
     RATE_REPORT_SUBMIT,
     RATE_REPORT_TRACK,
     limiter,
@@ -42,7 +41,6 @@ from app.schemas.report import (
     ReportSubmitted,
 )
 from app.services.audit import log_action
-from app.services.erasure import erase_report
 from app.services.retention import purge_expired_reports
 
 
@@ -173,32 +171,6 @@ async def track_report(
             status_history=report.status_history or [],
         ).model_dump(mode="json"),
     )
-
-
-# ── PUBLIC: GDPR Art. 17 — Right to erasure (no auth) ──
-@router.delete("/track/{tracking_id}/erasure", response_model=ApiResponse)
-@limiter.limit(RATE_ERASURE)
-async def request_erasure(
-    tracking_id: str,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
-    """Reporter-initiated permanent data deletion (GDPR Art. 17).
-
-    Tracking ID is the proof of ownership — whoever holds it can erase.
-    Deletes: report, evidence (GCS + DB), case notes.
-    Preserves: audit log with tracking_id only.
-    """
-    erased = await erase_report(
-        db,
-        tracking_id=tracking_id,
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
-    )
-    if not erased:
-        raise HTTPException(status_code=404, detail="Report not found")
-
-    return ApiResponse(data={"message": "Your data has been permanently erased."})
 
 
 # ── ADMIN: List all reports (paginated, filterable) ──

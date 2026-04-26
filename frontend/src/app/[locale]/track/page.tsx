@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Shield,
   ShieldCheck,
   Search,
   Clock,
@@ -14,11 +13,10 @@ import {
   AlertCircle,
   FileSearch,
   Loader2,
-  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { trackReport, eraseReport } from "@/lib/api";
+import { trackReport } from "@/lib/api";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
@@ -76,9 +74,6 @@ export default function TrackPage() {
   const [result, setResult] = useState<TrackResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showErasureConfirm, setShowErasureConfirm] = useState(false);
-  const [erasing, setErasing] = useState(false);
-  const [erased, setErased] = useState(false);
 
   const handleSearch = async () => {
     const id = trackingId.trim();
@@ -87,7 +82,6 @@ export default function TrackPage() {
     setLoading(true);
     setError(null);
     setResult(null);
-    setErased(false);
 
     try {
       const res = await trackReport(id);
@@ -102,22 +96,6 @@ export default function TrackPage() {
       );
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleErasure = async () => {
-    if (!result) return;
-    setErasing(true);
-    try {
-      await eraseReport(result.tracking_id);
-      setErased(true);
-      setResult(null);
-      setShowErasureConfirm(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("erasure.failed"));
-      setShowErasureConfirm(false);
-    } finally {
-      setErasing(false);
     }
   };
 
@@ -240,21 +218,6 @@ export default function TrackPage() {
               className="mt-6 p-4 rounded-[10px] bg-red-50 border border-red-200 text-red-600 text-sm text-center w-full max-w-[704px]"
             >
               {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Erasure success */}
-        <AnimatePresence>
-          {erased && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="mt-6 p-4 rounded-[10px] bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm text-center w-full max-w-[704px]"
-            >
-              <CheckCircle2 className="h-4 w-4 inline-block mr-1.5 -mt-0.5" />
-              {t("erasure.success")}
             </motion.div>
           )}
         </AnimatePresence>
@@ -448,67 +411,6 @@ export default function TrackPage() {
                     );
                   })}
                 </div>
-              </div>
-
-              {/* ── GDPR Erasure Card ── */}
-              <div className="bg-white rounded-[10px] border border-[#EBEBEB] p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs text-[#A9A9A9] uppercase tracking-wide flex items-center gap-1.5">
-                      <Shield className="h-3.5 w-3.5" />
-                      {t("erasure.title")}
-                    </p>
-                    <p className="text-xs text-[#909090] mt-1">
-                      {t("erasure.gdprNote")}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => setShowErasureConfirm(true)}
-                    className="shrink-0 px-4 h-9 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-sm font-medium rounded-[4px] cursor-pointer gap-1.5"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    {t("erasure.button")}
-                  </Button>
-                </div>
-
-                {/* Confirmation dialog — inline */}
-                <AnimatePresence>
-                  {showErasureConfirm && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-sm text-red-800 font-medium">
-                          {t("erasure.warning")}
-                        </p>
-                        <div className="flex gap-3 mt-4">
-                          <Button
-                            onClick={handleErasure}
-                            disabled={erasing}
-                            className="px-5 h-9 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-[4px] cursor-pointer gap-1.5"
-                          >
-                            {erasing ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-3.5 w-3.5" />
-                            )}
-                            {erasing ? t("erasure.erasing") : t("erasure.confirm")}
-                          </Button>
-                          <Button
-                            onClick={() => setShowErasureConfirm(false)}
-                            disabled={erasing}
-                            className="px-5 h-9 bg-white hover:bg-gray-50 text-[#636363] border border-[#EBEBEB] text-sm font-medium rounded-[4px] cursor-pointer"
-                          >
-                            {t("erasure.cancel")}
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
 
               {/* Back to Home */}

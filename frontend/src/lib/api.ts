@@ -155,24 +155,6 @@ export async function trackReport(
   return res.json();
 }
 
-/* ── GDPR Art. 17 — Erasure ── */
-
-export async function eraseReport(
-  trackingId: string,
-): Promise<ApiResponse<{ message: string }>> {
-  const res = await fetch(
-    `${API_BASE}/api/v1/reports/track/${encodeURIComponent(trackingId)}/erasure`,
-    { method: "DELETE" },
-  );
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => null);
-    throw new Error(err?.detail ?? `Erasure failed (${res.status})`);
-  }
-
-  return res.json();
-}
-
 /* ── Evidence ── */
 
 export async function uploadEvidence(
