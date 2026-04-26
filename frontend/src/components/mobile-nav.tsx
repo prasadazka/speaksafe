@@ -74,7 +74,7 @@ export function MobileNav({ links, adminLabel, ctaLabel, brandLabel }: MobileNav
             </div>
           </nav>
 
-          <div className="mt-auto p-4">
+          <div className="mt-6 px-4">
             <Link href="/report" onClick={() => setOpen(false)}>
               <button className="w-full cursor-pointer flex items-center justify-center gap-2 bg-[#00653E] text-white px-6 py-3 rounded font-semibold text-base shadow-[0_0_20px_rgba(0,101,62,0.5)] border border-white/15 hover:bg-[#007A4A] transition-all duration-200">
                 <FileText className="h-5 w-5" />

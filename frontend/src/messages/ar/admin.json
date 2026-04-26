@@ -217,6 +217,18 @@
     "viewedReport": "شاهد هذا البلاغ",
     "system": "النظام"
   },
+  "aiInsights": {
+    "title": "رؤى الذكاء الاصطناعي",
+    "description": "حلل هذه القضية بالذكاء الاصطناعي لاكتشاف الأنماط وتقدير التأثير والحصول على إجراءات موصى بها.",
+    "generate": "توليد الرؤى",
+    "analyzing": "جارٍ تحليل بيانات القضية\u2026",
+    "patternAnalysis": "تحليل الأنماط",
+    "patternDetected": "تم اكتشاف نمط",
+    "relatedCases": "قضايا مرتبطة ({count})",
+    "victimEstimate": "التأثير المقدّر",
+    "credibility": "المصداقية",
+    "recommendedActions": "الإجراءات الموصى بها"
+  },
   "notifications": {
     "title": "الإشعارات",
     "clearAll": "مسح الكل",

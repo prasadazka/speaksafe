@@ -138,13 +138,9 @@
       "title": "Smart Report Enhancement",
       "desc": "Turns raw, informal reports into clear, structured statements \u2014 while keeping every fact, name, and date exactly as the reporter wrote them. Always optional."
     },
-    "classify": {
-      "title": "Auto-Classification",
-      "desc": "Reports are automatically tagged across 10 concern types the moment they arrive, so compliance teams always see the right cases first."
-    },
-    "duplicate": {
-      "title": "Duplicate Detection",
-      "desc": "Identifies similar reports automatically, preventing redundancy and helping investigators spot patterns across submissions."
+    "patterns": {
+      "title": "Pattern Intelligence",
+      "desc": "AI identifies repeated behavior, tracks related cases, and surfaces actionable insights \u2014 helping compliance teams see the bigger picture and respond decisively."
     },
     "sentiment": {
       "title": "Urgency Detection",

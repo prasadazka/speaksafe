@@ -42,6 +42,7 @@ export interface ReportListItem {
   category: ReportCategory;
   severity: Severity;
   status: ReportStatus;
+  description: string;
   resolution_type: ResolutionType | null;
   occurred_at: string | null;
   location: string | null;
@@ -555,4 +556,49 @@ export async function exportReportsPDF(
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+/* ── AI Pattern Intelligence ── */
+
+export interface PatternInsights {
+  relatedCases: { trackingId: string; relevance: string }[];
+  patternAnalysis: { isPattern: boolean; summary: string };
+  victimEstimate: { count: number; confidence: string; reasoning: string };
+  credibilitySignals: { level: string; factors: string[] };
+  recommendedActions: string[];
+}
+
+export async function getAiInsights(
+  token: string,
+  trackingId: string,
+  report: {
+    description: string;
+    category: string;
+    severity: string;
+    status: string;
+    location?: string | null;
+    occurred_at?: string | null;
+  },
+): Promise<PatternInsights | null> {
+  try {
+    const res = await fetch("/api/ai/patterns", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token,
+        reportId: trackingId,
+        description: report.description,
+        category: report.category,
+        severity: report.severity,
+        status: report.status,
+        location: report.location ?? null,
+        occurredAt: report.occurred_at ?? null,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.insights ?? null;
+  } catch {
+    return null;
+  }
 }

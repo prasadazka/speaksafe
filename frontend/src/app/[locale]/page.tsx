@@ -5,7 +5,7 @@ import {
   Fingerprint, ServerCrash, Globe, ShieldCheck, Zap, Users,
   MessageSquareWarning, Timer,
   Database, KeyRound, Network, Scale,
-  Sparkles, Layers, GitCompareArrows, HeartPulse,
+  Sparkles, GitCompareArrows, HeartPulse,
 } from "lucide-react";
 import { AiSeverityDemo } from "@/components/ai-severity-demo";
 import { AiFormatDemo } from "@/components/ai-format-demo";
@@ -44,8 +44,8 @@ const complianceBadges = [
 const architectureIcons = [Network, Database, KeyRound, Scale];
 const orgIcons = [Users, Zap, FileText, Scale, Globe, ShieldCheck];
 const complianceBottomIcons = [Timer, CheckCircle2, Database];
-const aiComingSoonIcons = [Layers, GitCompareArrows, HeartPulse];
-const aiComingSoonKeys = ["classify", "duplicate", "sentiment"] as const;
+const aiComingSoonIcons = [GitCompareArrows, HeartPulse];
+const aiComingSoonKeys = ["patterns", "sentiment"] as const;
 
 /* ── Page ── */
 
@@ -102,14 +102,8 @@ export default async function HomePage({
             </Link>
           </div>
 
-          {/* Right — mobile: CTA + hamburger */}
-          <div className="flex lg:hidden items-center gap-3">
-            <Link href="/report">
-              <button title="Raise a Concern" className="cursor-pointer flex items-center gap-2 bg-[#00653E] text-white px-5 py-2.5 rounded font-semibold text-sm shadow-[0_0_20px_rgba(0,101,62,0.5)] border border-white/15 hover:bg-[#007A4A] transition-all duration-200">
-                <FileText className="h-4 w-4" />
-                {tc("nav.raiseConcern")}
-              </button>
-            </Link>
+          {/* Right — mobile: hamburger only (CTA inside menu) */}
+          <div className="flex lg:hidden items-center">
             <MobileNav
               links={[
                 { href: "#how-it-works", label: tc("nav.about") },
@@ -595,8 +589,8 @@ export default async function HomePage({
               </StaggerItem>
             </StaggerContainer>
 
-            {/* Coming Soon cards — 3 features */}
-            <StaggerContainer stagger={0.12} className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {/* Coming Soon cards — 2 features */}
+            <StaggerContainer stagger={0.12} className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
               {aiComingSoonKeys.map((key, i) => {
                 const Icon = aiComingSoonIcons[i];
                 return (

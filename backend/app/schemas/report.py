@@ -84,6 +84,7 @@ class ReportListItem(BaseModel):
     category: ReportCategory
     severity: Severity
     status: ReportStatus
+    description: str
     resolution_type: ResolutionType | None = None
     occurred_at: date | None
     location: str | None

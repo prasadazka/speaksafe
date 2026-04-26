@@ -217,6 +217,18 @@
     "viewedReport": "viewed this report",
     "system": "System"
   },
+  "aiInsights": {
+    "title": "AI Insights",
+    "description": "Analyze this case with AI to detect patterns, estimate impact, and get recommended actions.",
+    "generate": "Generate Insights",
+    "analyzing": "Analyzing case data\u2026",
+    "patternAnalysis": "Pattern Analysis",
+    "patternDetected": "Pattern Detected",
+    "relatedCases": "Related Cases ({count})",
+    "victimEstimate": "Estimated Impact",
+    "credibility": "Credibility",
+    "recommendedActions": "Recommended Actions"
+  },
   "notifications": {
     "title": "Notifications",
     "clearAll": "Clear all",
