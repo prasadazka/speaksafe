@@ -88,6 +88,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS"
             " last_active_at TIMESTAMPTZ"
         ))
+        # Sync audit_action enum with Python AuditAction values
+        for val in (
+            "ADMIN_ROLE_CHANGED", "ADMIN_DEACTIVATED",
+            "ADMIN_ACTIVATED", "ADMIN_DELETED",
+            "ADMIN_PASSWORD_RESET", "ADMIN_PASSWORD_CHANGED",
+            "REPORT_PURGED", "REPORT_ERASED",
+            "REPORT_EXPORTED", "REPORT_VIEWED",
+        ):
+            await conn.execute(text(
+                f"ALTER TYPE audit_action ADD VALUE"
+                f" IF NOT EXISTS '{val}'"
+            ))
         # ── Immutable audit logs ──
         # Trigger function that blocks UPDATE/DELETE
         await conn.execute(text("""

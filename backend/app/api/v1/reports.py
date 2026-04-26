@@ -251,36 +251,30 @@ async def get_report(
     db: AsyncSession = Depends(get_db),
     user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
-    try:
-        result = await db.execute(
-            select(Report).where(Report.id == report_id, Report.is_deleted.is_(False))
-        )
-        report = result.scalar_one_or_none()
-        if not report:
-            raise HTTPException(status_code=404, detail="Report not found")
+    result = await db.execute(
+        select(Report).where(Report.id == report_id, Report.is_deleted.is_(False))
+    )
+    report = result.scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
 
-        # Serialize BEFORE commit — async sessions expire objects on commit
-        data = _decrypt_report_detail(report)
+    # Serialize BEFORE commit — async sessions expire objects on commit
+    data = _decrypt_report_detail(report)
 
-        # Log access — track who viewed which report
-        await log_action(
-            db,
-            AuditAction.REPORT_VIEWED,
-            "report",
-            str(report_id),
-            actor=user,
-            metadata={"tracking_id": report.tracking_id},
-            ip_address=_get_client_ip(request),
-            user_agent=_get_user_agent(request),
-        )
-        await db.commit()
+    # Log access — track who viewed which report
+    await log_action(
+        db,
+        AuditAction.REPORT_VIEWED,
+        "report",
+        str(report_id),
+        actor=user,
+        metadata={"tracking_id": report.tracking_id},
+        ip_address=_get_client_ip(request),
+        user_agent=_get_user_agent(request),
+    )
+    await db.commit()
 
-        return ApiResponse(data=data)
-    except HTTPException:
-        raise
-    except Exception as exc:
-        msg = f"get_report error: {type(exc).__name__}: {exc}"
-        raise HTTPException(status_code=500, detail=msg) from exc
+    return ApiResponse(data=data)
 
 
 # ── ADMIN: Update status ──
@@ -742,38 +736,32 @@ async def get_access_log(
     _user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
     """Return all REPORT_VIEWED audit entries for a specific report."""
-    try:
-        result = await db.execute(
-            select(Report.id).where(
-                Report.id == report_id,
-                Report.is_deleted.is_(False),
-            )
+    result = await db.execute(
+        select(Report.id).where(
+            Report.id == report_id,
+            Report.is_deleted.is_(False),
         )
-        if not result.scalar_one_or_none():
-            raise HTTPException(status_code=404, detail="Report not found")
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Report not found")
 
-        query = (
-            select(AuditLog)
-            .where(
-                AuditLog.resource_type == "report",
-                AuditLog.resource_id == str(report_id),
-                AuditLog.action == AuditAction.REPORT_VIEWED,
-            )
-            .order_by(AuditLog.created_at.desc())
+    query = (
+        select(AuditLog)
+        .where(
+            AuditLog.resource_type == "report",
+            AuditLog.resource_id == str(report_id),
+            AuditLog.action == AuditAction.REPORT_VIEWED,
         )
-        logs = (await db.execute(query)).scalars().all()
+        .order_by(AuditLog.created_at.desc())
+    )
+    logs = (await db.execute(query)).scalars().all()
 
-        return ApiResponse(
-            data=[
-                AuditLogItem.model_validate(log).model_dump(mode="json")
-                for log in logs
-            ],
-        )
-    except HTTPException:
-        raise
-    except Exception as exc:
-        msg = f"access_log error: {type(exc).__name__}: {exc}"
-        raise HTTPException(status_code=500, detail=msg) from exc
+    return ApiResponse(
+        data=[
+            AuditLogItem.model_validate(log).model_dump(mode="json")
+            for log in logs
+        ],
+    )
 
 
 # ── ADMIN: Data retention purge (ADMIN role only) ──
