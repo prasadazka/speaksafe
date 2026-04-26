@@ -3,10 +3,12 @@ import io
 import uuid
 from datetime import datetime, timedelta, timezone
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from fpdf import FPDF
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, require_role
@@ -90,35 +92,35 @@ async def submit_report(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    # Generate a unique tracking ID with retry on collision
-    for _ in range(10):
+    # Generate a unique tracking ID — retry on DB constraint violation
+    log = structlog.get_logger()
+    for attempt in range(5):
         tid = generate_tracking_id()
-        exists = await db.execute(
-            select(Report.id).where(Report.tracking_id == tid)
+        now = datetime.now(timezone.utc)
+        report = Report(
+            tracking_id=tid,
+            category=payload.category,
+            severity=payload.severity,
+            sentiment=payload.sentiment.model_dump() if payload.sentiment else None,
+            description=encrypt(payload.description),
+            occurred_at=payload.occurred_at,
+            location=payload.location,
+            acknowledgment_due=now + timedelta(days=settings.ACKNOWLEDGMENT_DAYS),
+            feedback_due=now + timedelta(days=settings.FEEDBACK_DEADLINE_DAYS),
+            status_history=[{"status": "OPEN", "at": now.isoformat()}],
         )
-        if not exists.scalar_one_or_none():
+        db.add(report)
+        try:
+            await db.flush()
             break
+        except IntegrityError:
+            await db.rollback()
+            log.warning("tracking_id_collision", tracking_id=tid, attempt=attempt + 1)
     else:
         raise HTTPException(
             status_code=503,
             detail="Unable to generate unique tracking ID.",
         )
-
-    now = datetime.now(timezone.utc)
-    report = Report(
-        tracking_id=tid,
-        category=payload.category,
-        severity=payload.severity,
-        sentiment=payload.sentiment.model_dump() if payload.sentiment else None,
-        description=encrypt(payload.description),
-        occurred_at=payload.occurred_at,
-        location=payload.location,
-        acknowledgment_due=now + timedelta(days=settings.ACKNOWLEDGMENT_DAYS),
-        feedback_due=now + timedelta(days=settings.FEEDBACK_DEADLINE_DAYS),
-        status_history=[{"status": "OPEN", "at": now.isoformat()}],
-    )
-    db.add(report)
-    await db.flush()
 
     await log_action(
         db, AuditAction.REPORT_CREATED, "report", str(report.id),
