@@ -258,6 +258,9 @@ async def get_report(
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
 
+    # Serialize BEFORE commit — async sessions expire objects on commit
+    data = _decrypt_report_detail(report)
+
     # Log access — track who viewed which report
     await log_action(
         db,
@@ -271,7 +274,7 @@ async def get_report(
     )
     await db.commit()
 
-    return ApiResponse(data=_decrypt_report_detail(report))
+    return ApiResponse(data=data)
 
 
 # ── ADMIN: Update status ──
