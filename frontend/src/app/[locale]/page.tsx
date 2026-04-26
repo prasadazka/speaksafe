@@ -590,7 +590,7 @@ export default async function HomePage({
             </StaggerContainer>
 
             {/* Coming Soon cards — 2 features */}
-            <StaggerContainer stagger={0.12} className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <StaggerContainer stagger={0.12} className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
               {aiComingSoonKeys.map((key, i) => {
                 const Icon = aiComingSoonIcons[i];
                 return (

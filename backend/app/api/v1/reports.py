@@ -230,8 +230,15 @@ async def list_reports(
     result = await db.execute(query)
     reports = result.scalars().all()
 
+    items = []
+    for r in reports:
+        item = ReportListItem.model_validate(r).model_dump(mode="json")
+        if item.get("description"):
+            item["description"] = decrypt(item["description"])
+        items.append(item)
+
     return ApiResponse(
-        data=[ReportListItem.model_validate(r).model_dump(mode="json") for r in reports],
+        data=items,
         meta={"total": total, "page": page, "limit": limit},
     )
 
