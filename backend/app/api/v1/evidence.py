@@ -104,8 +104,8 @@ async def upload_evidence(
     await log_action(
         db, AuditAction.EVIDENCE_UPLOADED, "evidence", str(evidence.id),
         metadata={"report_id": str(report_id), "file_name": evidence.file_name, "size": size},
-        ip_address=get_client_ip(request),
-        user_agent=get_user_agent(request),
+        ip_address=None,
+        user_agent=None,
     )
     await db.commit()
     await db.refresh(evidence)

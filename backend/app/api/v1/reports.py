@@ -111,8 +111,8 @@ async def submit_report(
     await log_action(
         db, AuditAction.REPORT_CREATED, "report", str(report.id),
         metadata={"tracking_id": report.tracking_id, "category": payload.category.value},
-        ip_address=get_client_ip(request),
-        user_agent=get_user_agent(request),
+        ip_address=None,
+        user_agent=None,
     )
     await db.commit()
     await db.refresh(report)

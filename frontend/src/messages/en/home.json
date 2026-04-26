@@ -49,7 +49,7 @@
     "description": "Whistleblowers expose fraud worth billions every year \u2014 yet most remain silent out of fear of retaliation. Sawt Safe eliminates that fear entirely. Your identity is never collected, never stored, and never at risk.",
     "bullets": [
       "Zero personal data collected \u2014 by design, not by policy",
-      "Encrypted before it leaves your device, encrypted at every stage",
+      "AES-256 encryption in transit and at rest \u2014 protected at every stage",
       "Aligned with EU, GDPR, and international protection standards",
       "Chosen by compliance leaders across industries worldwide"
     ]
@@ -65,7 +65,7 @@
       },
       {
         "title": "Military-Grade Encryption",
-        "desc": "Every disclosure, note, and evidence file is encrypted before it leaves your device \u2014 and stays encrypted at every stage."
+        "desc": "Every disclosure, note, and evidence file is protected with AES-256 encryption in transit and at rest \u2014 staying encrypted at every stage."
       },
       {
         "title": "Tamper-Proof Audit Trail",

@@ -46,7 +46,7 @@
   "step3": {
     "title": "Attach Supporting Evidence",
     "subtitle": "Upload any documents, screenshots, or files that support your disclosure. This step is optional.",
-    "encryptedBadge": "Files are encrypted before leaving your device and stored securely.",
+    "encryptedBadge": "Files are encrypted with AES-256 and stored securely.",
     "back": "Back",
     "skip": "Skip",
     "continue": "Continue"
