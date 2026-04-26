@@ -27,6 +27,10 @@ import {
   CheckCircle2,
   AlertCircle,
   ChevronDown,
+  Download,
+  File,
+  Image,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,6 +64,10 @@ import {
   type AuditAction,
   getAiInsights,
   type PatternInsights,
+  listEvidence,
+  downloadEvidence,
+  deleteEvidence,
+  type EvidenceItem,
 } from "@/lib/admin-api";
 import { useTranslations } from "next-intl";
 
@@ -192,6 +200,10 @@ export default function CaseDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [aiInsights, setAiInsights] = useState<PatternInsights | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [evidence, setEvidence] = useState<EvidenceItem[]>([]);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [deletingEvidenceId, setDeletingEvidenceId] = useState<string | null>(null);
+  const [downloadingEvidenceId, setDownloadingEvidenceId] = useState<string | null>(null);
 
   /* Confirmation dialog state */
   const [statusDialog, setStatusDialog] = useState<{
@@ -261,6 +273,26 @@ export default function CaseDetailPage() {
   useEffect(() => {
     fetchNotes();
   }, [fetchNotes]);
+
+  /* Fetch evidence */
+  const fetchEvidence = useCallback(async () => {
+    if (!token || !reportId) return;
+    setEvidenceLoading(true);
+    try {
+      const res = await listEvidence(token, reportId);
+      if (res.success && res.data) {
+        setEvidence(res.data as EvidenceItem[]);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setEvidenceLoading(false);
+    }
+  }, [token, reportId]);
+
+  useEffect(() => {
+    fetchEvidence();
+  }, [fetchEvidence]);
 
   /* Fetch timeline */
   const fetchTimeline = useCallback(async () => {
@@ -391,6 +423,35 @@ export default function CaseDetailPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : t("caseDetail.failedToDelete"));
       setDeleting(false);
+    }
+  };
+
+  const handleDownloadEvidence = async (ev: EvidenceItem) => {
+    if (!token || !reportId) return;
+    setDownloadingEvidenceId(ev.id);
+    try {
+      await downloadEvidence(token, reportId, ev.id, ev.file_name);
+    } catch {
+      setError(t("caseDetail.failedToLoadEvidence"));
+    } finally {
+      setDownloadingEvidenceId(null);
+    }
+  };
+
+  const handleDeleteEvidence = async (evidenceId: string) => {
+    if (!token || !reportId) return;
+    setDeletingEvidenceId(evidenceId);
+    try {
+      const res = await deleteEvidence(token, reportId, evidenceId);
+      if (res.success) {
+        await fetchEvidence();
+        await refreshReport();
+        await fetchTimeline();
+      }
+    } catch {
+      setError(t("caseDetail.failedToDeleteEvidence"));
+    } finally {
+      setDeletingEvidenceId(null);
     }
   };
 
@@ -873,18 +934,91 @@ export default function CaseDetailPage() {
               </TabsContent>
 
               {/* Evidence tab */}
-              <TabsContent value="evidence" className="mt-4">
-                <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
-                  <CardContent className="py-8 text-center text-sm text-[#909090]">
-                    {report.evidence_count > 0 ? (
-                      <p>
-                        {t("caseDetail.evidenceAttached", { count: report.evidence_count })}
-                      </p>
-                    ) : (
-                      <p>{t("caseDetail.noEvidence")}</p>
-                    )}
-                  </CardContent>
-                </Card>
+              <TabsContent value="evidence" className="mt-4 space-y-3">
+                {evidenceLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-[#9B9B9B]" />
+                  </div>
+                ) : evidence.length === 0 ? (
+                  <p className="text-sm text-[#909090] text-center py-6">
+                    {t("caseDetail.noEvidence")}
+                  </p>
+                ) : (
+                  evidence.map((ev) => {
+                    const isImage = ev.mime_type.startsWith("image/");
+                    const isPdf = ev.mime_type === "application/pdf";
+                    const IconComp = isImage ? Image : isPdf ? FileText : File;
+                    const sizeStr =
+                      ev.size_bytes < 1024
+                        ? `${ev.size_bytes} B`
+                        : ev.size_bytes < 1024 * 1024
+                          ? `${(ev.size_bytes / 1024).toFixed(1)} KB`
+                          : `${(ev.size_bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+                    return (
+                      <Card key={ev.id} className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
+                        <CardContent className="py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-lg bg-[#F5F5F5] flex items-center justify-center shrink-0">
+                              <IconComp className="h-4 w-4 text-[#636363]" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-black truncate">
+                                {ev.file_name}
+                              </p>
+                              <div className="flex items-center gap-2 mt-0.5 text-xs text-[#909090]">
+                                <span>{sizeStr}</span>
+                                <span>·</span>
+                                <span>{formatDateTime(ev.created_at)}</span>
+                                {ev.encrypted && (
+                                  <>
+                                    <span>·</span>
+                                    <span className="inline-flex items-center gap-0.5 text-[#00653E]">
+                                      <Lock className="h-3 w-3" />
+                                      {t("caseDetail.evidenceEncrypted")}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 cursor-pointer"
+                                title={t("caseDetail.download")}
+                                onClick={() => handleDownloadEvidence(ev)}
+                                disabled={downloadingEvidenceId === ev.id}
+                              >
+                                {downloadingEvidenceId === ev.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Download className="h-4 w-4 text-[#636363]" />
+                                )}
+                              </Button>
+                              {!hasRole("VIEWER") && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 cursor-pointer text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  title={t("caseDetail.deleteEvidence")}
+                                  onClick={() => handleDeleteEvidence(ev.id)}
+                                  disabled={deletingEvidenceId === ev.id}
+                                >
+                                  {deletingEvidenceId === ev.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
               </TabsContent>
 
               {/* Timeline tab */}

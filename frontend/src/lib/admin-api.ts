@@ -295,6 +295,68 @@ export async function addNote(
   return handleResponse<NoteItem>(res);
 }
 
+/* ── Evidence ── */
+
+export interface EvidenceItem {
+  id: string;
+  report_id: string;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  encrypted: boolean;
+  uploaded_by: string;
+  created_at: string;
+}
+
+export async function listEvidence(
+  token: string,
+  reportId: string,
+): Promise<ApiResponse<EvidenceItem[]>> {
+  const res = await fetch(`${API_BASE}/api/v1/reports/${reportId}/evidence`, {
+    headers: authHeaders(token),
+  });
+  return handleResponse<EvidenceItem[]>(res);
+}
+
+export async function downloadEvidence(
+  token: string,
+  reportId: string,
+  evidenceId: string,
+  fileName: string,
+): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/reports/${reportId}/evidence/${evidenceId}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("sawtsafe:session-expired"));
+    }
+    throw new Error(`Download failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+export async function deleteEvidence(
+  token: string,
+  reportId: string,
+  evidenceId: string,
+): Promise<ApiResponse<{ message: string }>> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/reports/${reportId}/evidence/${evidenceId}`,
+    { method: "DELETE", headers: authHeaders(token) },
+  );
+  return handleResponse(res);
+}
+
 /* ── Audit Logs ── */
 
 export interface AuditFilters {
