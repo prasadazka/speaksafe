@@ -583,7 +583,7 @@ export default function CaseDetailPage() {
                 variant="outline"
                 className={statusColor[report.status] + " border"}
               >
-                {tc(`status.${report.status}`)}
+                {tc(`status.${report.status || "OPEN"}`)}
               </Badge>
               {report.resolution_type && (
                 <Badge
@@ -1101,8 +1101,8 @@ export default function CaseDetailPage() {
                                           }`}
                                         >
                                           {entry.action === "REPORT_STATUS_UPDATED"
-                                            ? tc(`status.${entry.metadata_.old}`)
-                                            : tc(`severity.${entry.metadata_.old}`)}
+                                            ? tc(`status.${entry.metadata_.old || "OPEN"}`)
+                                            : tc(`severity.${entry.metadata_.old || "LOW"}`)}
                                         </span>
                                         <ArrowRight className="h-3 w-3 text-[#909090]" />
                                         <span
@@ -1113,8 +1113,8 @@ export default function CaseDetailPage() {
                                           }`}
                                         >
                                           {entry.action === "REPORT_STATUS_UPDATED"
-                                            ? tc(`status.${entry.metadata_.new}`)
-                                            : tc(`severity.${entry.metadata_.new}`)}
+                                            ? tc(`status.${entry.metadata_.new || "OPEN"}`)
+                                            : tc(`severity.${entry.metadata_.new || "LOW"}`)}
                                         </span>
                                       </div>
                                     )}
@@ -1209,7 +1209,7 @@ export default function CaseDetailPage() {
                   },
                   {
                     label: t("caseDetail.statusLabel"),
-                    value: tc(`status.${report.status}`),
+                    value: tc(`status.${report.status || "OPEN"}`),
                   },
                   ...(report.resolution_type ? [{
                     label: t("caseDetail.resolutionType"),

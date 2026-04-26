@@ -245,7 +245,7 @@ export default function TrackPage() {
                     </p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${statusBadgeColors[statusKey] ?? "bg-gray-100 text-gray-700"}`}>
-                    {tc(`status.${statusKey}`)}
+                    {tc(`status.${statusKey || "OPEN"}`)}
                   </span>
                 </div>
 
@@ -389,7 +389,7 @@ export default function TrackPage() {
                                   : "text-[#636363]"
                             }`}
                           >
-                            {tc(`status.${s}`)}
+                            {tc(`status.${s || "OPEN"}`)}
                           </p>
                           {isActive && (
                             <p className="text-xs text-[#BDBDBD] mt-0.5">

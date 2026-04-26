@@ -494,7 +494,7 @@ export default function DashboardPage() {
                                     " border text-xs"
                                   }
                                 >
-                                  {tc(`status.${r.status}`)}
+                                  {tc(`status.${r.status || "OPEN"}`)}
                                 </Badge>
                                 {r.resolution_type && (
                                   <Badge

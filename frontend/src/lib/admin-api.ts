@@ -649,25 +649,34 @@ export async function getAiInsights(
     occurred_at?: string | null;
   },
 ): Promise<PatternInsights | null> {
-  try {
-    const res = await fetch("/api/ai/patterns", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token,
-        reportId: trackingId,
-        description: report.description,
-        category: report.category,
-        severity: report.severity,
-        status: report.status,
-        location: report.location ?? null,
-        occurredAt: report.occurred_at ?? null,
-      }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.insights ?? null;
-  } catch {
-    return null;
+  const body = JSON.stringify({
+    token,
+    reportId: trackingId,
+    description: report.description,
+    category: report.category,
+    severity: report.severity,
+    status: report.status,
+    location: report.location ?? null,
+    occurredAt: report.occurred_at ?? null,
+  });
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch("/api/ai/patterns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+      if (!res.ok) {
+        if (attempt === 0) continue;
+        return null;
+      }
+      const data = await res.json();
+      return data.insights ?? null;
+    } catch {
+      if (attempt === 0) continue;
+      return null;
+    }
   }
+  return null;
 }
