@@ -7,6 +7,7 @@ Audit logs are NEVER deleted — they are the compliance record.
 
 from datetime import datetime, timedelta, timezone
 
+import structlog
 from google.cloud import storage as gcs
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,7 +70,11 @@ async def purge_expired_reports(
                 blob = bucket.blob(ev.file_key)
                 blob.delete()
             except Exception:
-                pass  # GCS delete is best-effort; DB record still removed
+                structlog.get_logger().warning(
+                    "gcs_delete_failed",
+                    file_key=ev.file_key,
+                    report_id=str(rid),
+                )
 
         # 2. Hard-delete evidence rows
         await db.execute(

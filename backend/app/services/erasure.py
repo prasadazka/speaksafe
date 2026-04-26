@@ -5,6 +5,7 @@ The tracking ID is the only proof of ownership — whoever holds it can erase.
 Audit logs are NEVER deleted; only the tracking_id is recorded.
 """
 
+import structlog
 from google.cloud import storage as gcs
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -56,7 +57,11 @@ async def erase_report(
             blob = bucket.blob(ev.file_key)
             blob.delete()
         except Exception:
-            pass  # best-effort GCS cleanup
+            structlog.get_logger().warning(
+                "gcs_delete_failed",
+                file_key=ev.file_key,
+                report_id=str(rid),
+            )
 
     # 2. Hard-delete evidence rows
     await db.execute(

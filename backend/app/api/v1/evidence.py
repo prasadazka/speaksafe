@@ -1,5 +1,6 @@
 import uuid
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from google.cloud import storage as gcs
@@ -175,7 +176,18 @@ async def download_evidence(
 
     # Decrypt if the file was encrypted (has encryption_iv)
     if evidence.encryption_iv:
-        content = decrypt_bytes(raw, evidence.encryption_iv)
+        try:
+            content = decrypt_bytes(raw, evidence.encryption_iv)
+        except Exception:
+            structlog.get_logger().error(
+                "evidence_decryption_failed",
+                evidence_id=str(evidence_id),
+                report_id=str(report_id),
+            )
+            raise HTTPException(
+                status_code=422,
+                detail="Evidence file is corrupted or cannot be decrypted",
+            )
     else:
         content = raw  # legacy unencrypted files
 
