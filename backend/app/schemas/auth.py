@@ -3,8 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
-from app.models.admin_user import AdminRole
-
+from app.models.admin_user import AdminRole  # noqa: I001
 
 # ── Request ──
 

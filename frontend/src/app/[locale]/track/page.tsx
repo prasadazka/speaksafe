@@ -6,16 +6,19 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield,
+  ShieldCheck,
   Search,
   Clock,
+  CalendarClock,
   CheckCircle2,
   AlertCircle,
   FileSearch,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { trackReport } from "@/lib/api";
+import { trackReport, eraseReport } from "@/lib/api";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
@@ -35,11 +38,20 @@ const statusBadgeColors: Record<string, string> = {
   CLOSED: "bg-emerald-100 text-emerald-800",
 };
 
+interface StatusHistoryEntry {
+  status: string;
+  at: string;
+}
+
 interface TrackResult {
   tracking_id: string;
   status: string;
   created_at: string;
   updated_at: string;
+  acknowledgment_due: string | null;
+  feedback_due: string | null;
+  feedback_given_at: string | null;
+  status_history: StatusHistoryEntry[];
 }
 
 function formatDate(iso: string): string {
@@ -64,6 +76,9 @@ export default function TrackPage() {
   const [result, setResult] = useState<TrackResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showErasureConfirm, setShowErasureConfirm] = useState(false);
+  const [erasing, setErasing] = useState(false);
+  const [erased, setErased] = useState(false);
 
   const handleSearch = async () => {
     const id = trackingId.trim();
@@ -72,6 +87,7 @@ export default function TrackPage() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setErased(false);
 
     try {
       const res = await trackReport(id);
@@ -86,6 +102,22 @@ export default function TrackPage() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleErasure = async () => {
+    if (!result) return;
+    setErasing(true);
+    try {
+      await eraseReport(result.tracking_id);
+      setErased(true);
+      setResult(null);
+      setShowErasureConfirm(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("erasure.failed"));
+      setShowErasureConfirm(false);
+    } finally {
+      setErasing(false);
     }
   };
 
@@ -212,6 +244,21 @@ export default function TrackPage() {
           )}
         </AnimatePresence>
 
+        {/* Erasure success */}
+        <AnimatePresence>
+          {erased && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="mt-6 p-4 rounded-[10px] bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm text-center w-full max-w-[704px]"
+            >
+              <CheckCircle2 className="h-4 w-4 inline-block mr-1.5 -mt-0.5" />
+              {t("erasure.success")}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Result — only after submission */}
         <AnimatePresence>
           {result && (
@@ -258,6 +305,86 @@ export default function TrackPage() {
                 </div>
               </div>
 
+              {/* ── Compliance Deadlines Card ── */}
+              {(result.acknowledgment_due || result.feedback_due) && (
+                <div className="bg-white rounded-[10px] border border-[#EBEBEB] p-6">
+                  <p className="text-xs text-[#A9A9A9] uppercase tracking-wide mb-4 flex items-center gap-1.5">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    {t("compliance.title")}
+                  </p>
+
+                  <div className="space-y-3">
+                    {/* 7-day Acknowledgment */}
+                    {result.acknowledgment_due && (() => {
+                      const now = new Date();
+                      const due = new Date(result.acknowledgment_due);
+                      const acknowledged = now <= due;
+                      return (
+                        <div className={`flex items-start gap-3 p-3 rounded-lg ${acknowledged ? "bg-emerald-50 border border-emerald-200" : "bg-amber-50 border border-amber-200"}`}>
+                          <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${acknowledged ? "text-emerald-600" : "text-amber-600"}`} />
+                          <div>
+                            <p className={`text-sm font-medium ${acknowledged ? "text-emerald-800" : "text-amber-800"}`}>
+                              {t("compliance.acknowledgment")}
+                            </p>
+                            <p className={`text-xs mt-0.5 ${acknowledged ? "text-emerald-600" : "text-amber-600"}`}>
+                              {acknowledged
+                                ? t("compliance.acknowledged")
+                                : t("compliance.acknowledgmentOverdue")}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* 90-day Feedback Deadline */}
+                    {result.feedback_due && (() => {
+                      const now = new Date();
+                      const due = new Date(result.feedback_due);
+                      const daysLeft = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                      const feedbackGiven = !!result.feedback_given_at;
+                      const overdue = daysLeft < 0 && !feedbackGiven;
+                      const warning = daysLeft >= 0 && daysLeft <= 14 && !feedbackGiven;
+
+                      let bgClass = "bg-blue-50 border border-blue-200";
+                      let textClass = "text-blue-800";
+                      let subClass = "text-blue-600";
+
+                      if (feedbackGiven) {
+                        bgClass = "bg-emerald-50 border border-emerald-200";
+                        textClass = "text-emerald-800";
+                        subClass = "text-emerald-600";
+                      } else if (overdue) {
+                        bgClass = "bg-red-50 border border-red-200";
+                        textClass = "text-red-800";
+                        subClass = "text-red-600";
+                      } else if (warning) {
+                        bgClass = "bg-amber-50 border border-amber-200";
+                        textClass = "text-amber-800";
+                        subClass = "text-amber-600";
+                      }
+
+                      return (
+                        <div className={`flex items-start gap-3 p-3 rounded-lg ${bgClass}`}>
+                          <CalendarClock className={`h-4 w-4 mt-0.5 shrink-0 ${subClass}`} />
+                          <div>
+                            <p className={`text-sm font-medium ${textClass}`}>
+                              {t("compliance.feedbackDeadline")}
+                            </p>
+                            <p className={`text-xs mt-0.5 ${subClass}`}>
+                              {feedbackGiven
+                                ? t("compliance.feedbackProvided")
+                                : overdue
+                                  ? t("compliance.feedbackOverdue")
+                                  : t("compliance.feedbackDue", { date: formatDate(result.feedback_due) })}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+
               {/* ── Status Timeline Card ── */}
               <div className="bg-white rounded-[10px] border border-[#EBEBEB] p-6">
                 <div className="space-y-0">
@@ -265,6 +392,9 @@ export default function TrackPage() {
                     const Icon = statusIcons[s];
                     const isActive = s === result.status;
                     const isPast = i <= statusIdx;
+                    const historyEntry = (result.status_history ?? []).find(
+                      (e) => e.status === s,
+                    );
 
                     return (
                       <div key={s} className="flex items-start gap-4">
@@ -274,22 +404,26 @@ export default function TrackPage() {
                             className={`h-[26px] w-[26px] rounded-full flex items-center justify-center shrink-0 ${
                               isActive
                                 ? "bg-[#00653E]"
-                                : "bg-[#C6C6C6]"
+                                : isPast
+                                  ? "bg-[#00653E]/60"
+                                  : "bg-[#C6C6C6]"
                             }`}
                           >
-                            <Icon className={`h-4 w-4 ${isActive ? "text-white" : "text-[#636363]"}`} />
+                            <Icon className={`h-4 w-4 ${isActive || isPast ? "text-white" : "text-[#636363]"}`} />
                           </div>
                           {i < 3 && (
-                            <div className="w-0.5 h-[38px] bg-[#A1AEBE]" />
+                            <div className={`w-0.5 h-[38px] ${isPast && i < statusIdx ? "bg-[#00653E]/40" : "bg-[#A1AEBE]"}`} />
                           )}
                         </div>
-                        {/* Label */}
+                        {/* Label + Timestamp */}
                         <div className="pt-0.5">
                           <p
                             className={`text-sm ${
                               isActive
                                 ? "text-[#00653E] font-semibold"
-                                : "text-[#636363]"
+                                : isPast
+                                  ? "text-[#1F2334] font-medium"
+                                  : "text-[#636363]"
                             }`}
                           >
                             {tc(`status.${s}`)}
@@ -297,6 +431,16 @@ export default function TrackPage() {
                           {isActive && (
                             <p className="text-xs text-[#BDBDBD] mt-0.5">
                               {t("currentStatus")}
+                              {historyEntry && (
+                                <span className="ml-1.5 text-[#909090]">
+                                  &middot; {formatDate(historyEntry.at)}
+                                </span>
+                              )}
+                            </p>
+                          )}
+                          {isPast && !isActive && historyEntry && (
+                            <p className="text-xs text-[#BDBDBD] mt-0.5">
+                              {formatDate(historyEntry.at)}
                             </p>
                           )}
                         </div>
@@ -304,6 +448,67 @@ export default function TrackPage() {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* ── GDPR Erasure Card ── */}
+              <div className="bg-white rounded-[10px] border border-[#EBEBEB] p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs text-[#A9A9A9] uppercase tracking-wide flex items-center gap-1.5">
+                      <Shield className="h-3.5 w-3.5" />
+                      {t("erasure.title")}
+                    </p>
+                    <p className="text-xs text-[#909090] mt-1">
+                      {t("erasure.gdprNote")}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setShowErasureConfirm(true)}
+                    className="shrink-0 px-4 h-9 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-sm font-medium rounded-[4px] cursor-pointer gap-1.5"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    {t("erasure.button")}
+                  </Button>
+                </div>
+
+                {/* Confirmation dialog — inline */}
+                <AnimatePresence>
+                  {showErasureConfirm && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-800 font-medium">
+                          {t("erasure.warning")}
+                        </p>
+                        <div className="flex gap-3 mt-4">
+                          <Button
+                            onClick={handleErasure}
+                            disabled={erasing}
+                            className="px-5 h-9 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-[4px] cursor-pointer gap-1.5"
+                          >
+                            {erasing ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                            {erasing ? t("erasure.erasing") : t("erasure.confirm")}
+                          </Button>
+                          <Button
+                            onClick={() => setShowErasureConfirm(false)}
+                            disabled={erasing}
+                            className="px-5 h-9 bg-white hover:bg-gray-50 text-[#636363] border border-[#EBEBEB] text-sm font-medium rounded-[4px] cursor-pointer"
+                          >
+                            {t("erasure.cancel")}
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Back to Home */}

@@ -1,10 +1,12 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.admin_user import AdminRole, AdminUser
@@ -26,6 +28,21 @@ async def get_current_user(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+    # ── Session timeout check ──
+    now = datetime.now(timezone.utc)
+    if user.last_active_at:
+        idle = now - user.last_active_at
+        if idle > timedelta(minutes=settings.SESSION_TIMEOUT_MINUTES):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session expired due to inactivity",
+            )
+
+    # Bump last_active_at on every authenticated request
+    user.last_active_at = now
+    await db.commit()
+
     return user
 
 

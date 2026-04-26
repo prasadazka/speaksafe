@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useTranslations } from "next-intl";
+import type { ResolutionType } from "@/lib/admin-api";
 
 interface StatusChangeDialogProps {
   open: boolean;
@@ -19,7 +20,7 @@ interface StatusChangeDialogProps {
   type: "status" | "severity";
   currentValue: string;
   newValue: string;
-  onConfirm: () => Promise<void>;
+  onConfirm: (resolutionType?: ResolutionType) => Promise<void>;
 }
 
 const statusColors: Record<string, string> = {
@@ -36,6 +37,20 @@ const severityColors: Record<string, string> = {
   CRITICAL: "bg-red-100 text-red-700",
 };
 
+const resolutionTypeColors: Record<string, string> = {
+  SUBSTANTIATED: "border-red-300 bg-red-50 text-red-700",
+  UNSUBSTANTIATED: "border-emerald-300 bg-emerald-50 text-emerald-700",
+  INCONCLUSIVE: "border-amber-300 bg-amber-50 text-amber-700",
+  REFERRED: "border-blue-300 bg-blue-50 text-blue-700",
+};
+
+const RESOLUTION_TYPES: ResolutionType[] = [
+  "SUBSTANTIATED",
+  "UNSUBSTANTIATED",
+  "INCONCLUSIVE",
+  "REFERRED",
+];
+
 export function StatusChangeDialog({
   open,
   onOpenChange,
@@ -47,22 +62,31 @@ export function StatusChangeDialog({
   const t = useTranslations("admin.statusChange");
   const tc = useTranslations("common");
   const [loading, setLoading] = useState(false);
+  const [resolutionType, setResolutionType] = useState<ResolutionType | undefined>(undefined);
 
   const colors = type === "status" ? statusColors : severityColors;
   const translationKey = type === "status" ? "status" : "severity";
 
+  const isClosing = type === "status" && newValue === "CLOSED";
+
   const handleConfirm = async () => {
     setLoading(true);
     try {
-      await onConfirm();
+      await onConfirm(isClosing ? resolutionType : undefined);
       onOpenChange(false);
+      setResolutionType(undefined);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = (o: boolean) => {
+    onOpenChange(o);
+    if (!o) setResolutionType(undefined);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
           <DialogTitle className="text-black">
@@ -95,11 +119,36 @@ export function StatusChangeDialog({
           </span>
         </div>
 
+        {/* Resolution type selector — only when closing */}
+        {isClosing && (
+          <div className="space-y-2 pb-2">
+            <p className="text-sm font-medium text-black">
+              {t("resolutionTypeLabel")}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {RESOLUTION_TYPES.map((rt) => (
+                <button
+                  key={rt}
+                  type="button"
+                  onClick={() => setResolutionType(rt)}
+                  className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                    resolutionType === rt
+                      ? resolutionTypeColors[rt]
+                      : "border-[#EBEBEB] bg-white text-[#636363] hover:bg-gray-50"
+                  }`}
+                >
+                  {tc(`resolution.${rt}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <DialogFooter className="bg-[#F9FDFB] border-[#EBEBEB]">
           <Button
             variant="outline"
             title={t("cancel")}
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleClose(false)}
             disabled={loading}
             className="border-[#EBEBEB] text-[#636363] cursor-pointer"
           >

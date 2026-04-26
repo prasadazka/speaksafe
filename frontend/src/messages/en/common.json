@@ -6,6 +6,7 @@
     "features": "Features",
     "compliance": "Compliance",
     "faq": "FAQ",
+    "ai": "AI",
     "admin": "Admin",
     "raiseConcern": "Raise a Concern",
     "newReport": "New Report"
@@ -47,6 +48,12 @@
     "MEDIUM": "Medium",
     "HIGH": "High",
     "CRITICAL": "Critical"
+  },
+  "resolution": {
+    "SUBSTANTIATED": "Substantiated",
+    "UNSUBSTANTIATED": "Unsubstantiated",
+    "INCONCLUSIVE": "Inconclusive",
+    "REFERRED": "Referred"
   },
   "roles": {
     "ADMIN": "Admin",

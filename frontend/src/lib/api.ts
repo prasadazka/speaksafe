@@ -30,6 +30,7 @@ export interface EvidenceItem {
   file_name: string;
   mime_type: string;
   size_bytes: number;
+  encrypted: boolean;
 }
 
 /* ── API helpers ── */
@@ -99,11 +100,20 @@ export async function formatDescription(
 
 /* ── Track report ── */
 
+export interface StatusHistoryEntry {
+  status: string;
+  at: string;
+}
+
 export interface ReportStatus {
   tracking_id: string;
   status: string;
   created_at: string;
   updated_at: string;
+  acknowledgment_due: string | null;
+  feedback_due: string | null;
+  feedback_given_at: string | null;
+  status_history: StatusHistoryEntry[];
 }
 
 export async function trackReport(
@@ -116,6 +126,24 @@ export async function trackReport(
   if (!res.ok) {
     const err = await res.json().catch(() => null);
     throw new Error(err?.detail ?? `Report not found (${res.status})`);
+  }
+
+  return res.json();
+}
+
+/* ── GDPR Art. 17 — Erasure ── */
+
+export async function eraseReport(
+  trackingId: string,
+): Promise<ApiResponse<{ message: string }>> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/reports/track/${encodeURIComponent(trackingId)}/erasure`,
+    { method: "DELETE" },
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.detail ?? `Erasure failed (${res.status})`);
   }
 
   return res.json();

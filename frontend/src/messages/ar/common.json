@@ -6,6 +6,7 @@
     "features": "المميزات",
     "compliance": "الامتثال",
     "faq": "الأسئلة الشائعة",
+    "ai": "الذكاء الاصطناعي",
     "admin": "لوحة التحكم",
     "raiseConcern": "تقديم بلاغ",
     "newReport": "بلاغ جديد"
@@ -47,6 +48,12 @@
     "MEDIUM": "متوسط",
     "HIGH": "مرتفع",
     "CRITICAL": "حرج"
+  },
+  "resolution": {
+    "SUBSTANTIATED": "مُثبَت",
+    "UNSUBSTANTIATED": "غير مُثبَت",
+    "INCONCLUSIVE": "غير حاسم",
+    "REFERRED": "مُحال"
   },
   "roles": {
     "ADMIN": "مدير",

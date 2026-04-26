@@ -34,6 +34,7 @@ export type ReportCategory =
 
 export type Severity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type ReportStatus = "OPEN" | "UNDER_REVIEW" | "INVESTIGATING" | "CLOSED";
+export type ResolutionType = "SUBSTANTIATED" | "UNSUBSTANTIATED" | "INCONCLUSIVE" | "REFERRED";
 
 export interface ReportListItem {
   id: string;
@@ -41,16 +42,27 @@ export interface ReportListItem {
   category: ReportCategory;
   severity: Severity;
   status: ReportStatus;
+  resolution_type: ResolutionType | null;
   occurred_at: string | null;
   location: string | null;
   evidence_count: number;
   notes_count: number;
+  acknowledgment_due: string | null;
+  feedback_due: string | null;
+  feedback_given_at: string | null;
   created_at: string;
+}
+
+export interface ComplianceStats {
+  acknowledgment_overdue: number;
+  feedback_overdue: number;
+  feedback_warning: number;
 }
 
 export interface ReportDetail extends ReportListItem {
   description: string;
   resolution: string | null;
+  resolution_type: ResolutionType | null;
   assigned_to: string | null;
   updated_at: string;
 }
@@ -79,7 +91,9 @@ export type AuditAction =
   | "ADMIN_ACTIVATED"
   | "ADMIN_DELETED"
   | "ADMIN_PASSWORD_RESET"
-  | "ADMIN_PASSWORD_CHANGED";
+  | "ADMIN_PASSWORD_CHANGED"
+  | "REPORT_EXPORTED"
+  | "REPORT_VIEWED";
 
 export interface MFASetupResponse {
   secret: string;
@@ -94,7 +108,10 @@ export interface AuditLogItem {
   resource_type: string;
   resource_id: string;
   ip_address: string | null;
+  user_agent: string | null;
   metadata_: Record<string, unknown> | null;
+  record_hash: string | null;
+  prev_hash: string | null;
   created_at: string;
 }
 
@@ -123,6 +140,12 @@ function authHeaders(token: string): Record<string, string> {
 async function handleResponse<T>(res: Response): Promise<ApiResponse<T>> {
   if (!res.ok) {
     const err = await res.json().catch(() => null);
+    // Session expired — broadcast event so auth-context can auto-logout
+    if (res.status === 401) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("sawtsafe:session-expired"));
+      }
+    }
     throw new Error(
       err?.detail ?? err?.error ?? `Request failed (${res.status})`,
     );
@@ -203,11 +226,14 @@ export async function updateReportStatus(
   token: string,
   reportId: string,
   status: ReportStatus,
+  resolutionType?: ResolutionType,
 ): Promise<ApiResponse<ReportDetail>> {
+  const body: Record<string, string> = { status };
+  if (resolutionType) body.resolution_type = resolutionType;
   const res = await fetch(`${API_BASE}/api/v1/reports/${reportId}/status`, {
     method: "PATCH",
     headers: authHeaders(token),
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(body),
   });
   return handleResponse<ReportDetail>(res);
 }
@@ -298,6 +324,19 @@ export async function getCaseTimeline(
 ): Promise<ApiResponse<AuditLogItem[]>> {
   const res = await fetch(
     `${API_BASE}/api/v1/reports/${reportId}/timeline`,
+    { headers: authHeaders(token) },
+  );
+  return handleResponse<AuditLogItem[]>(res);
+}
+
+/* ── Access Log — who viewed a report ── */
+
+export async function getAccessLog(
+  token: string,
+  reportId: string,
+): Promise<ApiResponse<AuditLogItem[]>> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/reports/${reportId}/access-log`,
     { headers: authHeaders(token) },
   );
   return handleResponse<AuditLogItem[]>(res);
@@ -428,4 +467,92 @@ export async function resetUserPassword(
     body: JSON.stringify({ new_password: newPassword }),
   });
   return handleResponse(res);
+}
+
+/* ── Compliance Stats ── */
+
+export async function getComplianceStats(
+  token: string,
+): Promise<ApiResponse<ComplianceStats>> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/reports/compliance/stats`,
+    { headers: authHeaders(token) },
+  );
+  return handleResponse<ComplianceStats>(res);
+}
+
+/* ── Bulk Export ── */
+
+export interface ExportFilters {
+  status?: ReportStatus;
+  category?: ReportCategory;
+  severity?: Severity;
+  page?: number;
+  limit?: number;
+}
+
+function buildExportParams(filters: ExportFilters): string {
+  const params = new URLSearchParams();
+  if (filters.status) params.set("status", filters.status);
+  if (filters.category) params.set("category", filters.category);
+  if (filters.severity) params.set("severity", filters.severity);
+  if (filters.page) params.set("page", String(filters.page));
+  if (filters.limit) params.set("limit", String(filters.limit));
+  return params.toString();
+}
+
+export async function exportReportsCSV(
+  token: string,
+  filters: ExportFilters = {},
+): Promise<void> {
+  const qs = buildExportParams(filters);
+  const res = await fetch(
+    `${API_BASE}/api/v1/reports/export/csv${qs ? `?${qs}` : ""}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("sawtsafe:session-expired"));
+    }
+    throw new Error(`Export failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = res.headers.get("content-disposition")
+    ?.split("filename=")[1]?.replace(/"/g, "")
+    ?? "sawtsafe-reports.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+export async function exportReportsPDF(
+  token: string,
+  filters: ExportFilters = {},
+): Promise<void> {
+  const qs = buildExportParams(filters);
+  const res = await fetch(
+    `${API_BASE}/api/v1/reports/export/pdf${qs ? `?${qs}` : ""}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("sawtsafe:session-expired"));
+    }
+    throw new Error(`Export failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = res.headers.get("content-disposition")
+    ?.split("filename=")[1]?.replace(/"/g, "")
+    ?? "sawtsafe-reports.pdf";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }

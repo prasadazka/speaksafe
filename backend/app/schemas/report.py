@@ -3,8 +3,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-from app.models.report import ReportCategory, ReportStatus, Severity
-
+from app.models.report import ReportCategory, ReportStatus, ResolutionType, Severity  # noqa: I001
 
 # ── Request ──
 
@@ -18,6 +17,7 @@ class ReportCreate(BaseModel):
 
 class ReportStatusUpdate(BaseModel):
     status: ReportStatus
+    resolution_type: ResolutionType | None = None
 
 
 class ReportSeverityUpdate(BaseModel):
@@ -26,12 +26,23 @@ class ReportSeverityUpdate(BaseModel):
 
 # ── Response ──
 
+
+class StatusHistoryEntry(BaseModel):
+    status: str
+    at: datetime
+
+
 class ReportPublic(BaseModel):
     """What the anonymous reporter sees."""
     tracking_id: str
     status: ReportStatus
+    resolution_type: ResolutionType | None = None
     created_at: datetime
     updated_at: datetime
+    acknowledgment_due: datetime | None = None
+    feedback_due: datetime | None = None
+    feedback_given_at: datetime | None = None
+    status_history: list[StatusHistoryEntry] = []
 
 
 class ReportSubmitted(BaseModel):
@@ -52,9 +63,14 @@ class ReportDetail(BaseModel):
     location: str | None
     status: ReportStatus
     resolution: str | None
+    resolution_type: ResolutionType | None = None
     assigned_to: uuid.UUID | None
     evidence_count: int
     notes_count: int
+    acknowledgment_due: datetime | None = None
+    feedback_due: datetime | None = None
+    feedback_given_at: datetime | None = None
+    status_history: list[StatusHistoryEntry] = []
     created_at: datetime
     updated_at: datetime
 
@@ -68,10 +84,15 @@ class ReportListItem(BaseModel):
     category: ReportCategory
     severity: Severity
     status: ReportStatus
+    resolution_type: ResolutionType | None = None
     occurred_at: date | None
     location: str | None
     evidence_count: int
     notes_count: int
+    acknowledgment_due: datetime | None = None
+    feedback_due: datetime | None = None
+    feedback_given_at: datetime | None = None
+    status_history: list[StatusHistoryEntry] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}

@@ -122,6 +122,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/admin/login");
   }, [router]);
 
+  /* Auto-logout on session expiry (server-side 401) */
+  useEffect(() => {
+    const handler = () => logout();
+    window.addEventListener("sawtsafe:session-expired", handler);
+    return () => window.removeEventListener("sawtsafe:session-expired", handler);
+  }, [logout]);
+
   const hasRole = useCallback(
     (...roles: AdminRole[]) => {
       if (!user) return false;

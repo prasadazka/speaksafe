@@ -43,7 +43,17 @@
     "page": "صفحة {page} من {totalPages} ({total} إجمالي)",
     "statusBreakdown": "توزيع الحالات",
     "recentActivity": "النشاط الأخير",
-    "noActivity": "لا يوجد نشاط بعد"
+    "noActivity": "لا يوجد نشاط بعد",
+    "export": {
+      "label": "تصدير",
+      "csv": "تحميل CSV",
+      "pdf": "تحميل PDF"
+    },
+    "compliance": {
+      "ackOverdue": "بلاغ(ات) تجاوز(ت) مهلة الإقرار (7 أيام) وفقًا للتوجيه الأوروبي المادة 9",
+      "fbOverdue": "بلاغ(ات) تجاوز(ت) مهلة الرد (3 أشهر) وفقًا للتوجيه الأوروبي المادة 9",
+      "fbWarning": "بلاغ(ات) تقترب من مهلة الرد (3 أشهر)"
+    }
   },
   "caseDetail": {
     "backToDashboard": "العودة للوحة التحكم",
@@ -62,6 +72,7 @@
     "category": "الفئة",
     "severityLabel": "الخطورة",
     "statusLabel": "الحالة",
+    "resolutionType": "نتيجة التحقيق",
     "submittedDate": "تاريخ التقديم",
     "lastUpdatedDate": "آخر تحديث",
     "evidenceFiles": "ملفات الأدلة",
@@ -196,13 +207,35 @@
     "reportDeleted": "تم حذف البلاغ",
     "noteAdded": "تمت إضافة ملاحظة",
     "evidenceUploaded": "تم رفع ملف أدلة",
-    "evidenceDeleted": "تم حذف ملف أدلة"
+    "evidenceDeleted": "تم حذف ملف أدلة",
+    "reportViewed": "تمت مشاهدة البلاغ بواسطة {name}"
+  },
+  "accessLog": {
+    "title": "سجل الوصول",
+    "subtitle": "من شاهد هذا البلاغ",
+    "noAccess": "لا توجد سجلات وصول بعد",
+    "viewedReport": "شاهد هذا البلاغ",
+    "system": "النظام"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "clearAll": "مسح الكل",
+    "empty": "لا توجد إشعارات بعد",
+    "connected": "التحديثات المباشرة متصلة",
+    "disconnected": "التحديثات المباشرة غير متصلة",
+    "newReport": "تم تقديم بلاغ جديد: {id}",
+    "statusChanged": "تم تغيير حالة {id} من {from} إلى {to}",
+    "severityChanged": "تم تغيير خطورة {id} من {from} إلى {to}",
+    "reportDeleted": "تم حذف البلاغ {id}",
+    "noteAdded": "تمت إضافة ملاحظة جديدة إلى {id}",
+    "evidenceUploaded": "تم رفع دليل جديد إلى {id}"
   },
   "statusChange": {
     "confirmStatusTitle": "تأكيد تغيير الحالة",
     "confirmStatusDesc": "هل أنت متأكد من تغيير حالة القضية؟",
     "confirmSeverityTitle": "تأكيد تغيير الخطورة",
     "confirmSeverityDesc": "هل أنت متأكد من تغيير خطورة القضية؟",
+    "resolutionTypeLabel": "نتيجة التحقيق (اختياري)",
     "confirm": "تأكيد",
     "cancel": "إلغاء"
   }

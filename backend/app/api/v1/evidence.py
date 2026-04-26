@@ -1,13 +1,17 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from google.cloud import storage as gcs
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
+from app.api.v1.ws import WSEvent
+from app.api.v1.ws import manager as ws_manager
 from app.core.config import settings
+from app.core.encryption import decrypt_bytes, encrypt_bytes
+from app.core.rate_limit import RATE_EVIDENCE_UPLOAD, limiter
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
 from app.models.audit_log import AuditAction
@@ -56,9 +60,11 @@ async def _get_report(report_id: uuid.UUID, db: AsyncSession) -> Report:
 
 # ── PUBLIC: Reporter uploads evidence ──
 @router.post("", response_model=ApiResponse)
+@limiter.limit(RATE_EVIDENCE_UPLOAD)
 async def upload_evidence(
     report_id: uuid.UUID,
     file: UploadFile,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     report = await _get_report(report_id, db)
@@ -71,10 +77,15 @@ async def upload_evidence(
     if size > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File exceeds 100 MB limit")
 
+    # Encrypt file content before uploading to GCS
+    encrypted_content, nonce_b64 = encrypt_bytes(content)
+
     file_id = uuid.uuid4()
     file_key = f"evidence/{report_id}/{file_id}/{file.filename}"
     blob = _bucket().blob(file_key)
-    blob.upload_from_string(content, content_type=file.content_type)
+    blob.upload_from_string(
+        encrypted_content, content_type="application/octet-stream",
+    )
 
     evidence = Evidence(
         report_id=report_id,
@@ -82,21 +93,34 @@ async def upload_evidence(
         file_key=file_key,
         mime_type=file.content_type or "application/octet-stream",
         size_bytes=size,
+        encryption_iv=nonce_b64,
         uploaded_by="reporter",
     )
     db.add(evidence)
     report.evidence_count += 1
     await db.flush()
 
+    forwarded = request.headers.get("x-forwarded-for")
+    ip = forwarded.split(",")[0].strip() if forwarded else (
+        request.client.host if request.client else None
+    )
     await log_action(
         db, AuditAction.EVIDENCE_UPLOADED, "evidence", str(evidence.id),
         metadata={"report_id": str(report_id), "file_name": evidence.file_name, "size": size},
+        ip_address=ip,
+        user_agent=request.headers.get("user-agent"),
     )
     await db.commit()
     await db.refresh(evidence)
 
+    await ws_manager.broadcast(WSEvent.EVIDENCE_UPLOADED, {
+        "report_id": str(report_id),
+        "tracking_id": report.tracking_id,
+        "file_name": evidence.file_name,
+    })
+
     return ApiResponse(
-        data=EvidenceItem.model_validate(evidence).model_dump(mode="json"),
+        data=EvidenceItem.from_evidence(evidence).model_dump(mode="json"),
     )
 
 
@@ -118,7 +142,7 @@ async def list_evidence(
     items = result.scalars().all()
 
     return ApiResponse(
-        data=[EvidenceItem.model_validate(e).model_dump(mode="json") for e in items],
+        data=[EvidenceItem.from_evidence(e).model_dump(mode="json") for e in items],
     )
 
 
@@ -147,7 +171,14 @@ async def download_evidence(
     if not blob.exists():
         raise HTTPException(status_code=404, detail="File not found in storage")
 
-    content = blob.download_as_bytes()
+    raw = blob.download_as_bytes()
+
+    # Decrypt if the file was encrypted (has encryption_iv)
+    if evidence.encryption_iv:
+        content = decrypt_bytes(raw, evidence.encryption_iv)
+    else:
+        content = raw  # legacy unencrypted files
+
     return StreamingResponse(
         iter([content]),
         media_type=evidence.mime_type,
@@ -160,6 +191,7 @@ async def download_evidence(
 async def delete_evidence(
     report_id: uuid.UUID,
     evidence_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
@@ -178,9 +210,15 @@ async def delete_evidence(
 
     evidence.is_deleted = True
     report.evidence_count = max(0, report.evidence_count - 1)
+    fwd = request.headers.get("x-forwarded-for")
+    ev_ip = fwd.split(",")[0].strip() if fwd else (
+        request.client.host if request.client else None
+    )
     await log_action(
         db, AuditAction.EVIDENCE_DELETED, "evidence", str(evidence_id),
         actor=user, metadata={"report_id": str(report_id), "file_name": evidence.file_name},
+        ip_address=ev_ip,
+        user_agent=request.headers.get("user-agent"),
     )
     await db.commit()
 

@@ -33,6 +33,11 @@ import {
   Download,
   ClipboardCheck,
   Info,
+  ChevronDown,
+  ShieldCheck,
+  Ban,
+  Eye,
+  Gavel,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -1159,6 +1164,7 @@ function StepReview({
   onSubmit: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const [rightsOpen, setRightsOpen] = useState(false);
   const data = form.getValues();
   const cat = categoryDefs.find((c) => c.value === data.category);
   const catLabel = cat ? t(`categories.${cat.value}.label`) : undefined;
@@ -1251,6 +1257,83 @@ function StepReview({
               : t("step4.filesAttached", { count: files.length })}
           </span>
         </div>
+      </div>
+
+      {/* ── Reporter Rights (anti-retaliation) ── */}
+      <div className="mb-5">
+        <button
+          type="button"
+          onClick={() => setRightsOpen((o) => !o)}
+          className="w-full flex items-center gap-3 px-5 py-4 rounded-xl border border-[#00653E]/20 bg-[#00653E]/[0.04] text-left group transition-colors hover:bg-[#00653E]/[0.07]"
+        >
+          <ShieldCheck className="h-5 w-5 text-[#00653E] shrink-0" />
+          <span className="flex-1 text-sm md:text-base font-semibold text-[#00653E]">
+            {t("rights.title")}
+          </span>
+          <motion.div
+            animate={{ rotate: rightsOpen ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="h-5 w-5 text-[#00653E]/60" />
+          </motion.div>
+        </button>
+        <AnimatePresence>
+          {rightsOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="overflow-hidden"
+            >
+              <div className="px-5 py-4 mt-1 rounded-xl border border-[#00653E]/10 bg-[#00653E]/[0.02]">
+                <p className="text-sm text-foreground/70 mb-4 leading-relaxed">
+                  {t("rights.intro")}
+                </p>
+                <ul className="space-y-3">
+                  {[
+                    {
+                      icon: Ban,
+                      key: "noRetaliation" as const,
+                    },
+                    {
+                      icon: Eye,
+                      key: "confidentiality" as const,
+                    },
+                    {
+                      icon: Shield,
+                      key: "anonymity" as const,
+                    },
+                    {
+                      icon: Gavel,
+                      key: "legalProtection" as const,
+                    },
+                  ].map(({ icon: Icon, key }) => (
+                    <li
+                      key={key}
+                      className="flex items-start gap-3"
+                    >
+                      <div className="mt-0.5 h-7 w-7 rounded-full bg-[#00653E]/10 flex items-center justify-center shrink-0">
+                        <Icon className="h-3.5 w-3.5 text-[#00653E]" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {t(`rights.${key}.title`)}
+                        </p>
+                        <p className="text-xs text-foreground/60 leading-relaxed">
+                          {t(`rights.${key}.desc`)}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-foreground/50 mt-4 pt-3 border-t border-foreground/5">
+                  {t("rights.legal")}
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Confirmation checkbox ── */}

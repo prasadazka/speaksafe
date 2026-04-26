@@ -68,3 +68,35 @@ def decrypt(ciphertext: str) -> str:
     ct = raw[_NONCE_BYTES:]
     aesgcm = AESGCM(key)
     return aesgcm.decrypt(nonce, ct, None).decode("utf-8")
+
+
+# ── Binary (file) encryption ──
+
+
+def encrypt_bytes(data: bytes) -> tuple[bytes, str]:
+    """Encrypt raw bytes with AES-256-GCM.
+
+    Returns:
+        (ciphertext_with_tag, nonce_b64):
+          - ciphertext_with_tag: encrypted bytes (includes 16-byte GCM tag)
+          - nonce_b64: base64-encoded 12-byte nonce (store as encryption_iv)
+    """
+    key = _get_key()
+    nonce = os.urandom(_NONCE_BYTES)
+    aesgcm = AESGCM(key)
+    ct = aesgcm.encrypt(nonce, data, None)
+    nonce_b64 = base64.urlsafe_b64encode(nonce).decode("ascii")
+    return ct, nonce_b64
+
+
+def decrypt_bytes(ct: bytes, nonce_b64: str) -> bytes:
+    """Decrypt AES-256-GCM encrypted bytes using stored nonce.
+
+    Args:
+        ct: ciphertext with GCM tag appended
+        nonce_b64: base64-encoded 12-byte nonce (from encryption_iv)
+    """
+    key = _get_key()
+    nonce = base64.urlsafe_b64decode(nonce_b64)
+    aesgcm = AESGCM(key)
+    return aesgcm.decrypt(nonce, ct, None)

@@ -16,6 +16,7 @@ import {
   ChevronRight,
   MessageSquare,
   Loader2,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,10 +32,14 @@ import { useAuth } from "@/contexts/auth-context";
 import {
   getReports,
   getAuditLogs,
+  getComplianceStats,
+  exportReportsCSV,
+  exportReportsPDF,
   type ReportListItem,
   type AuditLogItem,
   type ReportStatus,
   type PaginationMeta,
+  type ComplianceStats,
 } from "@/lib/admin-api";
 import { useTranslations } from "next-intl";
 
@@ -92,6 +97,30 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingReports, setLoadingReports] = useState(true);
   const [loadingAudit, setLoadingAudit] = useState(true);
+  const [complianceStats, setComplianceStats] = useState<ComplianceStats | null>(null);
+  const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  /* Export handler — uses current filters */
+  const handleExport = async (format: "csv" | "pdf") => {
+    if (!token) return;
+    setExporting(format);
+    setShowExportMenu(false);
+    try {
+      const filters = {
+        ...(statusFilter ? { status: statusFilter as ReportStatus } : {}),
+      };
+      if (format === "csv") {
+        await exportReportsCSV(token, filters);
+      } else {
+        await exportReportsPDF(token, filters);
+      }
+    } catch {
+      /* export error handled silently */
+    } finally {
+      setExporting(null);
+    }
+  };
 
   /* Auth guard */
   useEffect(() => {
@@ -142,6 +171,25 @@ export default function DashboardPage() {
       .catch(() => {})
       .finally(() => setLoadingAudit(false));
   }, [token, hasRole]);
+
+  /* Fetch compliance deadline stats */
+  useEffect(() => {
+    if (!token) return;
+    getComplianceStats(token)
+      .then((res) => {
+        if (res.success && res.data) {
+          setComplianceStats(res.data as ComplianceStats);
+        }
+      })
+      .catch(() => {});
+  }, [token]);
+
+  /* Auto-refresh reports when a WS notification arrives */
+  useEffect(() => {
+    const handler = () => fetchReports();
+    window.addEventListener("sawtsafe:ws-event", handler);
+    return () => window.removeEventListener("sawtsafe:ws-event", handler);
+  }, [fetchReports]);
 
   /* Compute stats from fetched data */
   const total = meta?.total ?? reports.length;
@@ -239,6 +287,39 @@ export default function DashboardPage() {
           })}
         </div>
 
+        {/* ── Compliance Deadline Alerts ── */}
+        {complianceStats && (complianceStats.acknowledgment_overdue > 0 || complianceStats.feedback_overdue > 0 || complianceStats.feedback_warning > 0) && (
+          <div className="mb-6 space-y-2">
+            {complianceStats.acknowledgment_overdue > 0 && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-red-50 border border-red-200">
+                <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                <p className="text-sm text-red-800">
+                  <span className="font-semibold">{complianceStats.acknowledgment_overdue}</span>{" "}
+                  {t("dashboard.compliance.ackOverdue")}
+                </p>
+              </div>
+            )}
+            {complianceStats.feedback_overdue > 0 && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-red-50 border border-red-200">
+                <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                <p className="text-sm text-red-800">
+                  <span className="font-semibold">{complianceStats.feedback_overdue}</span>{" "}
+                  {t("dashboard.compliance.fbOverdue")}
+                </p>
+              </div>
+            )}
+            {complianceStats.feedback_warning > 0 && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                <p className="text-sm text-amber-800">
+                  <span className="font-semibold">{complianceStats.feedback_warning}</span>{" "}
+                  {t("dashboard.compliance.fbWarning")}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── Reports + Sidebar — Same design as before per Figma note ── */}
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Reports Table */}
@@ -276,6 +357,41 @@ export default function DashboardPage() {
                       <option value="INVESTIGATING">{tc("status.INVESTIGATING")}</option>
                       <option value="CLOSED">{tc("status.CLOSED")}</option>
                     </select>
+                    {/* Export dropdown */}
+                    <div className="relative">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5 cursor-pointer"
+                        disabled={exporting !== null}
+                        onClick={() => setShowExportMenu((v) => !v)}
+                      >
+                        {exporting ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                        {t("dashboard.export.label")}
+                      </Button>
+                      {showExportMenu && (
+                        <div className="absolute end-0 top-full mt-1 z-50 min-w-[140px] rounded-md border border-border bg-background shadow-md py-1">
+                          <button
+                            type="button"
+                            className="w-full px-3 py-1.5 text-sm text-start hover:bg-accent cursor-pointer"
+                            onClick={() => handleExport("csv")}
+                          >
+                            {t("dashboard.export.csv")}
+                          </button>
+                          <button
+                            type="button"
+                            className="w-full px-3 py-1.5 text-sm text-start hover:bg-accent cursor-pointer"
+                            onClick={() => handleExport("pdf")}
+                          >
+                            {t("dashboard.export.pdf")}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -342,15 +458,32 @@ export default function DashboardPage() {
                               </Badge>
                             </td>
                             <td className="px-4 py-3">
-                              <Badge
-                                variant="outline"
-                                className={
-                                  statusColor[r.status] +
-                                  " border text-xs"
-                                }
-                              >
-                                {tc(`status.${r.status}`)}
-                              </Badge>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    statusColor[r.status] +
+                                    " border text-xs"
+                                  }
+                                >
+                                  {tc(`status.${r.status}`)}
+                                </Badge>
+                                {r.resolution_type && (
+                                  <Badge
+                                    variant="outline"
+                                    className={
+                                      "border text-[10px] " + (
+                                        r.resolution_type === "SUBSTANTIATED" ? "bg-red-50 text-red-600 border-red-200" :
+                                        r.resolution_type === "UNSUBSTANTIATED" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
+                                        r.resolution_type === "INCONCLUSIVE" ? "bg-amber-50 text-amber-600 border-amber-200" :
+                                        "bg-blue-50 text-blue-600 border-blue-200"
+                                      )
+                                    }
+                                  >
+                                    {tc(`resolution.${r.resolution_type}`)}
+                                  </Badge>
+                                )}
+                              </div>
                             </td>
                             <td className="px-4 py-3 text-muted-foreground">
                               {formatDate(r.created_at)}

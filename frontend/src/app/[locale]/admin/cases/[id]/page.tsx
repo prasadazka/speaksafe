@@ -19,6 +19,7 @@ import {
   Plus,
   ShieldAlert,
   Trash,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,10 +43,12 @@ import {
   updateReportSeverity,
   deleteReport,
   getCaseTimeline,
+  getAccessLog,
   type ReportDetail,
   type NoteItem,
   type ReportStatus,
   type Severity,
+  type ResolutionType,
   type AuditLogItem,
   type AuditAction,
 } from "@/lib/admin-api";
@@ -106,6 +109,7 @@ const timelineConfig: Record<
   NOTE_ADDED: { icon: MessageSquare, color: "text-[#00653E]", bgColor: "bg-emerald-100" },
   EVIDENCE_UPLOADED: { icon: Paperclip, color: "text-purple-600", bgColor: "bg-purple-100" },
   EVIDENCE_DELETED: { icon: Trash, color: "text-red-600", bgColor: "bg-red-100" },
+  REPORT_VIEWED: { icon: Eye, color: "text-cyan-600", bgColor: "bg-cyan-100" },
 };
 
 export default function CaseDetailPage() {
@@ -120,6 +124,7 @@ export default function CaseDetailPage() {
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [timeline, setTimeline] = useState<AuditLogItem[]>([]);
+  const [accessLog, setAccessLog] = useState<AuditLogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [noteContent, setNoteContent] = useState("");
@@ -219,6 +224,23 @@ export default function CaseDetailPage() {
     fetchTimeline();
   }, [fetchTimeline]);
 
+  /* Fetch access log (ADMIN + COMPLIANCE_OFFICER only) */
+  const fetchAccessLog = useCallback(async () => {
+    if (!token || !reportId || !hasRole("ADMIN", "COMPLIANCE_OFFICER")) return;
+    try {
+      const res = await getAccessLog(token, reportId);
+      if (res.success && res.data) {
+        setAccessLog(res.data as AuditLogItem[]);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [token, reportId, hasRole]);
+
+  useEffect(() => {
+    fetchAccessLog();
+  }, [fetchAccessLog]);
+
   /* Actions with confirmation */
   const openStatusConfirm = (newStatus: ReportStatus) => {
     if (!report || report.status === newStatus) return;
@@ -230,12 +252,14 @@ export default function CaseDetailPage() {
     setStatusDialog({ open: true, type: "severity", current: report.severity, next: newSeverity });
   };
 
-  const handleConfirmedChange = async () => {
+  const handleConfirmedChange = async (resolutionType?: ResolutionType) => {
     if (!token || !reportId) return;
     if (statusDialog.type === "status") {
       setUpdatingStatus(true);
       try {
-        const res = await updateReportStatus(token, reportId, statusDialog.next as ReportStatus);
+        const res = await updateReportStatus(
+          token, reportId, statusDialog.next as ReportStatus, resolutionType,
+        );
         if (res.success && res.data) {
           setReport(res.data as ReportDetail);
           await fetchTimeline();
@@ -316,6 +340,10 @@ export default function CaseDetailPage() {
         return t("timeline.evidenceUploaded");
       case "EVIDENCE_DELETED":
         return t("timeline.evidenceDeleted");
+      case "REPORT_VIEWED":
+        return t("timeline.reportViewed", {
+          name: entry.actor_email ?? "",
+        });
       default:
         return action.replace(/_/g, " ");
     }
@@ -408,6 +436,19 @@ export default function CaseDetailPage() {
               >
                 {tc(`status.${report.status}`)}
               </Badge>
+              {report.resolution_type && (
+                <Badge
+                  variant="outline"
+                  className={
+                    report.resolution_type === "SUBSTANTIATED" ? "bg-red-50 text-red-700 border-red-200" :
+                    report.resolution_type === "UNSUBSTANTIATED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                    report.resolution_type === "INCONCLUSIVE" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                    "bg-blue-50 text-blue-700 border-blue-200"
+                  }
+                >
+                  {tc(`resolution.${report.resolution_type}`)}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-4 text-sm text-[#909090] flex-wrap">
               <span className="flex items-center gap-1">
@@ -517,6 +558,12 @@ export default function CaseDetailPage() {
                   <History className="h-3.5 w-3.5 me-1.5" />
                   {t("timeline.title")}
                 </TabsTrigger>
+                {hasRole("ADMIN", "COMPLIANCE_OFFICER") && (
+                  <TabsTrigger value="access-log">
+                    <Eye className="h-3.5 w-3.5 me-1.5" />
+                    {t("accessLog.title")}
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               {/* Notes tab */}
@@ -717,6 +764,62 @@ export default function CaseDetailPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              {/* Access Log tab — ADMIN + COMPLIANCE_OFFICER only */}
+              {hasRole("ADMIN", "COMPLIANCE_OFFICER") && (
+                <TabsContent value="access-log" className="mt-4">
+                  <Card className="border-[#EBEBEB] shadow-[0_4px_15px_rgba(110,110,110,0.1)]">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2 text-black">
+                        <Eye className="h-4 w-4 text-cyan-600" />
+                        {t("accessLog.subtitle")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {accessLog.length === 0 ? (
+                        <p className="text-sm text-[#909090] text-center py-6">
+                          {t("accessLog.noAccess")}
+                        </p>
+                      ) : (
+                        <div className="space-y-3">
+                          {accessLog.map((entry) => (
+                            <div
+                              key={entry.id}
+                              className="flex items-start gap-3 pb-3 border-b border-[#F5F5F5] last:border-0 last:pb-0"
+                            >
+                              <div className="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center shrink-0">
+                                <Eye className="h-3.5 w-3.5 text-cyan-600" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm text-black">
+                                  <span className="font-medium">
+                                    {entry.actor_email ?? t("accessLog.system")}
+                                  </span>
+                                  {" "}
+                                  <span className="text-[#909090]">
+                                    {t("accessLog.viewedReport")}
+                                  </span>
+                                </p>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                                  <span className="text-xs text-[#909090]">
+                                    {formatFullDateTime(entry.created_at)}
+                                  </span>
+                                  {entry.ip_address && (
+                                    <span className="inline-flex items-center gap-1 text-xs text-[#909090]">
+                                      <Globe className="h-3 w-3" />
+                                      {entry.ip_address}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
             </Tabs>
           </div>
 
@@ -738,6 +841,10 @@ export default function CaseDetailPage() {
                     label: t("caseDetail.statusLabel"),
                     value: tc(`status.${report.status}`),
                   },
+                  ...(report.resolution_type ? [{
+                    label: t("caseDetail.resolutionType"),
+                    value: tc(`resolution.${report.resolution_type}`),
+                  }] : []),
                   {
                     label: t("caseDetail.submittedDate"),
                     value: formatDateTime(report.created_at),

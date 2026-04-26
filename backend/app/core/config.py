@@ -13,5 +13,16 @@ class Settings(BaseSettings):
     GCS_BUCKET: str = "sawtsafe-evidence"
     CORS_ORIGINS: str = ""
 
+    # ── EU Directive compliance deadlines (configurable) ──
+    ACKNOWLEDGMENT_DAYS: int = 7       # Art. 9(1)(b) — receipt confirmation
+    FEEDBACK_DEADLINE_DAYS: int = 90   # Art. 9(1)(f) — investigation feedback
+    FEEDBACK_WARNING_DAYS: int = 14    # Amber warning threshold before deadline
+
+    # ── Data retention & auto-purge (GDPR Art. 5(1)(e)) ──
+    RETENTION_DAYS: int = 365          # Days after closure before hard-delete
+
+    # ── Session timeout (SOC 2 / GDPR operational hardening) ──
+    SESSION_TIMEOUT_MINUTES: int = 30  # Inactivity timeout for admin sessions
+
 
 settings = Settings()

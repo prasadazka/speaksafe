@@ -43,7 +43,17 @@
     "page": "Page {page} of {totalPages} ({total} total)",
     "statusBreakdown": "Status Breakdown",
     "recentActivity": "Recent Activity",
-    "noActivity": "No activity yet"
+    "noActivity": "No activity yet",
+    "export": {
+      "label": "Export",
+      "csv": "Download CSV",
+      "pdf": "Download PDF"
+    },
+    "compliance": {
+      "ackOverdue": "report(s) overdue for 7-day acknowledgment (EU Directive Art. 9)",
+      "fbOverdue": "report(s) past the 3-month feedback deadline (EU Directive Art. 9)",
+      "fbWarning": "report(s) approaching the 3-month feedback deadline"
+    }
   },
   "caseDetail": {
     "backToDashboard": "Back to Dashboard",
@@ -62,6 +72,7 @@
     "category": "Category",
     "severityLabel": "Severity",
     "statusLabel": "Status",
+    "resolutionType": "Resolution",
     "submittedDate": "Submitted",
     "lastUpdatedDate": "Last Updated",
     "evidenceFiles": "Evidence Files",
@@ -196,13 +207,35 @@
     "reportDeleted": "Report deleted",
     "noteAdded": "Note added",
     "evidenceUploaded": "Evidence file uploaded",
-    "evidenceDeleted": "Evidence file removed"
+    "evidenceDeleted": "Evidence file removed",
+    "reportViewed": "Report viewed by {name}"
+  },
+  "accessLog": {
+    "title": "Access Log",
+    "subtitle": "Who viewed this report",
+    "noAccess": "No access records yet",
+    "viewedReport": "viewed this report",
+    "system": "System"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "clearAll": "Clear all",
+    "empty": "No notifications yet",
+    "connected": "Live updates connected",
+    "disconnected": "Live updates disconnected",
+    "newReport": "New report submitted: {id}",
+    "statusChanged": "{id} status changed from {from} to {to}",
+    "severityChanged": "{id} severity changed from {from} to {to}",
+    "reportDeleted": "Report {id} was deleted",
+    "noteAdded": "New note added to {id}",
+    "evidenceUploaded": "New evidence uploaded to {id}"
   },
   "statusChange": {
     "confirmStatusTitle": "Confirm Status Change",
     "confirmStatusDesc": "Are you sure you want to change the case status?",
     "confirmSeverityTitle": "Confirm Severity Change",
     "confirmSeverityDesc": "Are you sure you want to change the case severity?",
+    "resolutionTypeLabel": "Resolution outcome (optional)",
     "confirm": "Confirm",
     "cancel": "Cancel"
   }

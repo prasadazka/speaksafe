@@ -5,7 +5,10 @@ import {
   Fingerprint, ServerCrash, Globe, ShieldCheck, Zap, Users,
   MessageSquareWarning, Timer,
   Database, KeyRound, Network, Scale,
+  Sparkles, Layers, GitCompareArrows, HeartPulse,
 } from "lucide-react";
+import { AiSeverityDemo } from "@/components/ai-severity-demo";
+import { AiFormatDemo } from "@/components/ai-format-demo";
 import {
   FadeUp,
   FadeIn,
@@ -16,6 +19,7 @@ import {
 } from "@/components/motion";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { MobileNav } from "@/components/mobile-nav";
 
 /* ── Icon mappings (non-translatable) ── */
 
@@ -40,6 +44,8 @@ const complianceBadges = [
 const architectureIcons = [Network, Database, KeyRound, Scale];
 const orgIcons = [Users, Zap, FileText, Scale, Globe, ShieldCheck];
 const complianceBottomIcons = [Timer, CheckCircle2, Database];
+const aiComingSoonIcons = [Layers, GitCompareArrows, HeartPulse];
+const aiComingSoonKeys = ["classify", "duplicate", "sentiment"] as const;
 
 /* ── Page ── */
 
@@ -75,6 +81,7 @@ export default async function HomePage({
             <div className="flex items-center gap-10 text-white text-xl font-[family-name:var(--font-dm)]">
               <a href="#how-it-works" className="hover:text-white/80 transition-colors">{tc("nav.about")}</a>
               <a href="#features" className="hover:text-white/80 transition-colors">{tc("nav.features")}</a>
+              <a href="#ai" className="hover:text-white/80 transition-colors">{tc("nav.ai")}</a>
               <a href="#compliance" className="hover:text-white/80 transition-colors">{tc("nav.compliance")}</a>
               <a href="#faq" className="hover:text-white/80 transition-colors">{tc("nav.faq")}</a>
             </div>
@@ -82,17 +89,39 @@ export default async function HomePage({
             <LanguageSwitcher />
           </nav>
 
-          {/* Right */}
-          <div className="flex items-center gap-6">
-            <Link href="/admin/login" className="hidden md:block text-white text-xl font-[family-name:var(--font-dm)] hover:text-white/80 transition-colors">
+          {/* Right — desktop */}
+          <div className="hidden lg:flex items-center gap-6">
+            <Link href="/admin/login" className="text-white text-xl font-[family-name:var(--font-dm)] hover:text-white/80 transition-colors">
               {tc("nav.admin")}
             </Link>
             <Link href="/report">
-              <button title="Raise a Concern" className="cursor-pointer flex items-center gap-2.5 bg-[#00653E] text-white px-7 py-2.5 md:px-9 md:py-3 rounded font-semibold text-sm md:text-base shadow-[0_0_20px_rgba(0,101,62,0.5)] border border-white/15 hover:bg-[#007A4A] hover:-translate-y-0.5 hover:shadow-[0_0_28px_rgba(0,101,62,0.7)] active:translate-y-0 transition-all duration-200">
+              <button title="Raise a Concern" className="cursor-pointer flex items-center gap-2.5 bg-[#00653E] text-white px-9 py-3 rounded font-semibold text-base shadow-[0_0_20px_rgba(0,101,62,0.5)] border border-white/15 hover:bg-[#007A4A] hover:-translate-y-0.5 hover:shadow-[0_0_28px_rgba(0,101,62,0.7)] active:translate-y-0 transition-all duration-200">
                 <FileText className="h-5 w-5" />
                 {tc("nav.raiseConcern")}
               </button>
             </Link>
+          </div>
+
+          {/* Right — mobile: CTA + hamburger */}
+          <div className="flex lg:hidden items-center gap-3">
+            <Link href="/report">
+              <button title="Raise a Concern" className="cursor-pointer flex items-center gap-2 bg-[#00653E] text-white px-5 py-2.5 rounded font-semibold text-sm shadow-[0_0_20px_rgba(0,101,62,0.5)] border border-white/15 hover:bg-[#007A4A] transition-all duration-200">
+                <FileText className="h-4 w-4" />
+                {tc("nav.raiseConcern")}
+              </button>
+            </Link>
+            <MobileNav
+              links={[
+                { href: "#how-it-works", label: tc("nav.about") },
+                { href: "#features", label: tc("nav.features") },
+                { href: "#ai", label: tc("nav.ai") },
+                { href: "#compliance", label: tc("nav.compliance") },
+                { href: "#faq", label: tc("nav.faq") },
+              ]}
+              adminLabel={tc("nav.admin")}
+              ctaLabel={tc("nav.raiseConcern")}
+              brandLabel={tc("brand")}
+            />
           </div>
         </div>
       </header>
@@ -498,6 +527,106 @@ export default async function HomePage({
                 </div>
               </SlideIn>
             </div>
+          </div>
+        </section>
+
+        {/* ── AI Features ── */}
+        <section id="ai" className="bg-[#01151C] relative overflow-hidden">
+          {/* Background glow orbs */}
+          <div className="absolute -top-20 right-[20%] w-[400px] h-[400px] rounded-full bg-[#00653E]/[0.04] blur-[100px] pointer-events-none" />
+          <div className="absolute -bottom-20 left-[10%] w-[300px] h-[300px] rounded-full bg-[#00653E]/[0.03] blur-[80px] pointer-events-none" />
+
+          <div className="relative max-w-[1660px] mx-auto px-6 lg:px-[130px] py-20 md:py-28">
+            {/* Header */}
+            <FadeUp className="text-center mb-16">
+              <div className="inline-flex items-center border border-[#00653E] rounded-full px-5 py-1 mb-6">
+                <span className="text-[#00653E] font-semibold text-base font-[family-name:var(--font-dm)]">
+                  {t("ai.pill")}
+                </span>
+              </div>
+              <h2 className="text-3xl md:text-4xl lg:text-[56px] font-bold leading-tight text-white">
+                {t("ai.heading")}
+              </h2>
+              <p className="mt-6 text-lg md:text-xl text-white/50 max-w-[700px] mx-auto leading-relaxed">
+                {t("ai.subtitle")}
+              </p>
+            </FadeUp>
+
+            {/* Hero cards — 2 live features */}
+            <StaggerContainer stagger={0.2} className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-6 lg:mb-8">
+              {/* Severity Scoring */}
+              <StaggerItem>
+                <div className="bg-[#0A2A1E] rounded-2xl border border-white/[0.06] overflow-hidden h-full">
+                  <AiSeverityDemo />
+                  <div className="p-6 pt-4 border-t border-white/[0.04]">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-10 w-10 rounded-xl bg-[#00653E]/10 flex items-center justify-center shrink-0">
+                        <Sparkles className="h-5 w-5 text-[#00653E]" />
+                      </div>
+                      <span className="rounded-full bg-[#00653E]/20 text-[#00653E] px-3 py-0.5 text-xs font-semibold">
+                        {t("ai.liveBadge")}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{t("ai.severity.title")}</h3>
+                    <p className="text-sm text-white/50 leading-relaxed">{t("ai.severity.desc")}</p>
+
+                  </div>
+                </div>
+              </StaggerItem>
+
+              {/* Report Enhancement */}
+              <StaggerItem>
+                <div className="bg-[#0A2A1E] rounded-2xl border border-white/[0.06] overflow-hidden h-full">
+                  <AiFormatDemo />
+                  <div className="p-6 pt-4 border-t border-white/[0.04]">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-10 w-10 rounded-xl bg-[#00653E]/10 flex items-center justify-center shrink-0">
+                        <FileText className="h-5 w-5 text-[#00653E]" />
+                      </div>
+                      <span className="rounded-full bg-[#00653E]/20 text-[#00653E] px-3 py-0.5 text-xs font-semibold">
+                        {t("ai.liveBadge")}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{t("ai.format.title")}</h3>
+                    <p className="text-sm text-white/50 leading-relaxed">{t("ai.format.desc")}</p>
+
+                  </div>
+                </div>
+              </StaggerItem>
+            </StaggerContainer>
+
+            {/* Coming Soon cards — 3 features */}
+            <StaggerContainer stagger={0.12} className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {aiComingSoonKeys.map((key, i) => {
+                const Icon = aiComingSoonIcons[i];
+                return (
+                  <StaggerItem key={key}>
+                    <div className="bg-[#0A2A1E] rounded-2xl border border-white/[0.06] p-7 h-full relative overflow-hidden">
+                      {/* Ambient glow */}
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#00653E]/5 rounded-full blur-2xl pointer-events-none" />
+
+                      <div className="inline-flex items-center rounded-full border border-white/10 px-3 py-0.5 mb-5">
+                        <span className="text-white/40 text-xs font-semibold">
+                          {t("ai.comingSoonBadge")}
+                        </span>
+                      </div>
+
+                      <div className="h-11 w-11 rounded-xl bg-[#00653E]/10 flex items-center justify-center mb-4">
+                        <Icon className="h-5 w-5 text-[#00653E]" />
+                      </div>
+
+                      <h3 className="text-lg font-bold text-white mb-2">
+                        {t(`ai.${key}.title`)}
+                      </h3>
+                      <p className="text-sm text-white/40 leading-relaxed">
+                        {t(`ai.${key}.desc`)}
+                      </p>
+                    </div>
+                  </StaggerItem>
+                );
+              })}
+            </StaggerContainer>
+
           </div>
         </section>
 

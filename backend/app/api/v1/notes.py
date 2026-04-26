@@ -5,6 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
+from app.api.v1.ws import WSEvent
+from app.api.v1.ws import manager as ws_manager
 from app.core.encryption import decrypt, encrypt
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
@@ -59,9 +61,15 @@ async def add_note(
         db, AuditAction.NOTE_ADDED, "case_note", str(note.id),
         actor=user, metadata={"report_id": str(report_id)},
         ip_address=ip,
+        user_agent=request.headers.get("user-agent"),
     )
     await db.commit()
     await db.refresh(note)
+
+    await ws_manager.broadcast(WSEvent.NOTE_ADDED, {
+        "report_id": str(report_id),
+        "tracking_id": report.tracking_id,
+    })
 
     data = NoteItem.model_validate(note).model_dump(mode="json")
     data["content"] = decrypt(data["content"])

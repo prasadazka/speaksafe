@@ -1,7 +1,7 @@
 {
   "title": "Track Your Report",
   "description": "Enter your tracking ID to check the current status of your report.",
-  "placeholder": "SS-2026-XXXX",
+  "placeholder": "SS-2026-XXXXXXXX",
   "trackButton": "Track",
   "trackingId": "Tracking ID",
   "currentStatus": "Current status",
@@ -9,6 +9,27 @@
   "lastUpdated": "Last Updated",
   "notFound": "Report not found.",
   "unableToFind": "Unable to find that report.",
+  "compliance": {
+    "title": "Compliance Deadlines",
+    "acknowledgment": "7-Day Acknowledgment",
+    "acknowledged": "Your report has been received and acknowledged.",
+    "acknowledgmentOverdue": "Acknowledgment period has passed.",
+    "feedbackDeadline": "Feedback Deadline",
+    "feedbackDue": "Feedback expected by: {date}",
+    "feedbackProvided": "Feedback has been provided on your report.",
+    "feedbackOverdue": "The feedback deadline has passed. You may contact external authorities."
+  },
+  "erasure": {
+    "button": "Request Data Erasure",
+    "title": "Erase My Data",
+    "warning": "This action is permanent and cannot be undone. All data associated with this report — including evidence files, case notes, and the report itself — will be permanently deleted.",
+    "gdprNote": "This is your right under GDPR Article 17 (Right to Erasure).",
+    "confirm": "Permanently Erase",
+    "cancel": "Cancel",
+    "success": "Your data has been permanently erased.",
+    "erasing": "Erasing...",
+    "failed": "Failed to erase data. Please try again."
+  },
   "timeAgo": {
     "justNow": "Just now",
     "hoursAgo": "{hours}h ago",

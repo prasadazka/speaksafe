@@ -78,6 +78,27 @@
     "checkStatus": "Check Status",
     "done": "Done"
   },
+  "rights": {
+    "title": "Your Rights as a Whistleblower",
+    "intro": "You are protected by law when reporting in good faith. The following rights apply to you under international whistleblower protection frameworks:",
+    "noRetaliation": {
+      "title": "Protection from Retaliation",
+      "desc": "You cannot be dismissed, demoted, harassed, or subjected to any form of retaliation for making this report. Any retaliatory action is unlawful."
+    },
+    "confidentiality": {
+      "title": "Confidentiality Guarantee",
+      "desc": "Your identity and report details are kept strictly confidential. Only authorized personnel involved in the investigation may access this information."
+    },
+    "anonymity": {
+      "title": "Right to Anonymity",
+      "desc": "You have the right to report anonymously. No identifying information is required, and we do not track or store data that could reveal your identity."
+    },
+    "legalProtection": {
+      "title": "Legal Protection",
+      "desc": "Whistleblowers acting in good faith are shielded from civil and criminal liability for disclosing information through proper reporting channels."
+    },
+    "legal": "Protected under EU Directive 2019/1937 (Whistleblower Protection), GDPR, and applicable national legislation."
+  },
   "validation": {
     "categoryRequired": "Please select a category",
     "descriptionMin": "Please provide at least 10 characters",

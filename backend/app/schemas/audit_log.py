@@ -14,7 +14,10 @@ class AuditLogItem(BaseModel):
     resource_type: str
     resource_id: str
     ip_address: str | None
+    user_agent: str | None
     metadata_: dict | None
+    record_hash: str | None
+    prev_hash: str | None
     created_at: datetime
 
     model_config = {"from_attributes": True}

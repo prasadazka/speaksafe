@@ -1,10 +1,10 @@
 import datetime
 import enum
-import random
+import secrets
 import uuid
 
 from sqlalchemy import Boolean, Date, DateTime, Enum, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -37,16 +37,24 @@ class ReportStatus(str, enum.Enum):
     CLOSED = "CLOSED"
 
 
-def generate_tracking_id() -> str:
-    """Generate a tracking ID like SS-2026-A7K2.
+class ResolutionType(str, enum.Enum):
+    SUBSTANTIATED = "SUBSTANTIATED"
+    UNSUBSTANTIATED = "UNSUBSTANTIATED"
+    INCONCLUSIVE = "INCONCLUSIVE"
+    REFERRED = "REFERRED"
 
-    Uses 4 alphanumeric chars (0-9, A-Z excluding ambiguous I/O/L),
-    giving ~33^4 = ~1.2 million unique IDs per year — far safer than
-    the old 4-digit random which only had 9,000 possibilities.
+
+def generate_tracking_id() -> str:
+    """Generate a tracking ID like SS-2026-A7K2X9MN.
+
+    Uses 8 cryptographically-secure alphanumeric chars (0-9, A-Z
+    excluding ambiguous I/O/L) via the ``secrets`` module.
+    33^8 ≈ 1.4 trillion combinations — at 20 req/min rate-limit
+    brute-force would take ~133 million years.
     """
     year = datetime.datetime.now().year
     alphabet = "0123456789ABCDEFGHJKMNPQRSTUVWXYZ"  # 33 chars, no I/O/L
-    code = "".join(random.choices(alphabet, k=4))
+    code = "".join(secrets.choice(alphabet) for _ in range(8))
     return f"SS-{year}-{code}"
 
 
@@ -72,12 +80,32 @@ class Report(Base):
         Enum(ReportStatus, name="report_status"), nullable=False, default=ReportStatus.OPEN
     )
     resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resolution_type: Mapped[ResolutionType | None] = mapped_column(
+        Enum(ResolutionType, name="resolution_type"), nullable=True
+    )
     assigned_to: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )
     evidence_count: Mapped[int] = mapped_column(Integer, default=0)
     notes_count: Mapped[int] = mapped_column(Integer, default=0)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # ── Status history (per-step timestamps) ──
+    status_history: Mapped[list | None] = mapped_column(
+        JSONB, nullable=True, default=list
+    )
+
+    # ── EU Directive deadlines ──
+    acknowledgment_due: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    feedback_due: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    feedback_given_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -3,11 +3,17 @@ from datetime import datetime, timezone
 
 import pyotp
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import func as sa_func, select
+from sqlalchemy import func as sa_func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, require_role
-from app.core.security import create_access_token, hash_password, verify_password, verify_password_async
+from app.core.rate_limit import RATE_LOGIN, RATE_REGISTER, limiter
+from app.core.security import (
+    create_access_token,
+    hash_password,
+    verify_password_async,
+)
 from app.db.session import get_db
 from app.models.admin_user import AdminRole, AdminUser
 from app.models.audit_log import AuditAction
@@ -39,10 +45,26 @@ def _get_client_ip(request: Request) -> str | None:
     return None
 
 
+def _get_user_agent(request: Request) -> str | None:
+    return request.headers.get("user-agent")
+
+
+def _snapshot_user(user: AdminUser) -> dict:
+    """Capture admin user state for audit metadata (no password hash)."""
+    return {
+        "email": user.email,
+        "role": user.role.value,
+        "is_active": user.is_active,
+        "mfa_enabled": user.mfa_enabled,
+    }
+
+
 # ── Register ──
 @router.post("/register", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit(RATE_REGISTER)
 async def register(
     payload: AdminRegister,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     existing = await db.execute(select(AdminUser).where(AdminUser.email == payload.email))
@@ -61,6 +83,8 @@ async def register(
     await log_action(
         db, AuditAction.ADMIN_REGISTERED, "admin_user", str(user.id),
         metadata={"email": payload.email, "role": payload.role.value},
+        ip_address=_get_client_ip(request),
+        user_agent=_get_user_agent(request),
     )
     await db.commit()
     await db.refresh(user)
@@ -73,6 +97,7 @@ async def register(
 
 # ── Login ──
 @router.post("/login", response_model=ApiResponse)
+@limiter.limit(RATE_LOGIN)
 async def login(
     payload: AdminLogin,
     request: Request,
@@ -96,10 +121,13 @@ async def login(
         if not totp.verify(payload.totp_code, valid_window=1):
             raise HTTPException(status_code=401, detail="Invalid MFA code")
 
-    user.last_login_at = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc)
+    user.last_login_at = now
+    user.last_active_at = now
     await log_action(
         db, AuditAction.ADMIN_LOGIN, "admin_user", str(user.id), actor=user,
         ip_address=_get_client_ip(request),
+        user_agent=_get_user_agent(request),
     )
     await db.commit()
 
@@ -126,6 +154,7 @@ async def get_me(
 @router.patch("/me/password", response_model=ApiResponse)
 async def change_password(
     payload: PasswordChange,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: AdminUser = Depends(get_current_user),
 ) -> ApiResponse:
@@ -138,6 +167,8 @@ async def change_password(
         db, AuditAction.ADMIN_PASSWORD_CHANGED, "admin_user", str(user.id),
         actor=user,
         metadata={"email": user.email},
+        ip_address=_get_client_ip(request),
+        user_agent=_get_user_agent(request),
     )
     await db.commit()
 
@@ -237,6 +268,7 @@ async def list_users(
 async def update_user_role(
     user_id: uuid.UUID,
     payload: RoleUpdate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
 ) -> ApiResponse:
@@ -248,13 +280,20 @@ async def update_user_role(
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
 
+    before = _snapshot_user(target)
     old_role = target.role.value
     target.role = payload.role
+    after = _snapshot_user(target)
 
     await log_action(
         db, AuditAction.ADMIN_ROLE_CHANGED, "admin_user", str(user_id),
         actor=admin,
-        metadata={"email": target.email, "old_role": old_role, "new_role": payload.role.value},
+        metadata={
+            "email": target.email, "old_role": old_role, "new_role": payload.role.value,
+            "before": before, "after": after,
+        },
+        ip_address=_get_client_ip(request),
+        user_agent=_get_user_agent(request),
     )
     await db.commit()
 
@@ -267,6 +306,7 @@ async def update_user_role(
 async def update_user_active(
     user_id: uuid.UUID,
     payload: ActiveUpdate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
 ) -> ApiResponse:
@@ -278,13 +318,20 @@ async def update_user_active(
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
 
+    before = _snapshot_user(target)
     target.is_active = payload.is_active
+    after = _snapshot_user(target)
     action = AuditAction.ADMIN_ACTIVATED if payload.is_active else AuditAction.ADMIN_DEACTIVATED
 
     await log_action(
         db, action, "admin_user", str(user_id),
         actor=admin,
-        metadata={"email": target.email, "is_active": payload.is_active},
+        metadata={
+            "email": target.email, "is_active": payload.is_active,
+            "before": before, "after": after,
+        },
+        ip_address=_get_client_ip(request),
+        user_agent=_get_user_agent(request),
     )
     await db.commit()
 
@@ -296,6 +343,7 @@ async def update_user_active(
 @router.delete("/users/{user_id}", response_model=ApiResponse)
 async def delete_user(
     user_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
 ) -> ApiResponse:
@@ -307,10 +355,13 @@ async def delete_user(
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
 
+    before = _snapshot_user(target)
     await log_action(
         db, AuditAction.ADMIN_DELETED, "admin_user", str(user_id),
         actor=admin,
-        metadata={"email": target.email, "role": target.role.value},
+        metadata={"email": target.email, "role": target.role.value, "before": before},
+        ip_address=_get_client_ip(request),
+        user_agent=_get_user_agent(request),
     )
     await db.delete(target)
     await db.commit()
@@ -322,6 +373,7 @@ async def delete_user(
 async def reset_user_password(
     user_id: uuid.UUID,
     payload: PasswordReset,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
 ) -> ApiResponse:
@@ -336,6 +388,8 @@ async def reset_user_password(
         db, AuditAction.ADMIN_PASSWORD_RESET, "admin_user", str(user_id),
         actor=admin,
         metadata={"email": target.email},
+        ip_address=_get_client_ip(request),
+        user_agent=_get_user_agent(request),
     )
     await db.commit()
 

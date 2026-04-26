@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Shield, LogOut, KeyRound, Lock, Users, ChevronDown } from "lucide-react";
+import { NotificationToast } from "./notification-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/auth-context";
+import { useNotifications } from "@/hooks/use-notifications";
 import { MFASetupDialog } from "./mfa-setup-dialog";
 import { ChangePasswordDialog } from "./change-password-dialog";
 import { useTranslations } from "next-intl";
@@ -31,7 +33,8 @@ function getInitials(name: string): string {
 export function AdminHeader({ title }: AdminHeaderProps) {
   const t = useTranslations("admin");
   const tc = useTranslations("common");
-  const { user, logout, hasRole } = useAuth();
+  const { user, token, logout, hasRole } = useAuth();
+  const { notifications, connected, clearNotifications } = useNotifications(token);
   const [mfaOpen, setMfaOpen] = useState(false);
   const [changePwOpen, setChangePwOpen] = useState(false);
 
@@ -58,7 +61,15 @@ export function AdminHeader({ title }: AdminHeaderProps) {
             </span>
           </div>
 
-          {/* Right: User dropdown */}
+          {/* Right: Notifications + User dropdown */}
+          <div className="flex items-center gap-3">
+          <div className="relative">
+            <NotificationToast
+              notifications={notifications}
+              connected={connected}
+              onClear={clearNotifications}
+            />
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger
               title={t("header.userMenu")}
@@ -119,6 +130,7 @@ export function AdminHeader({ title }: AdminHeaderProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </div>
       </header>
 
