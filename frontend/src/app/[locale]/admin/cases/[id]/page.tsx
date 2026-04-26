@@ -67,29 +67,36 @@ function CollapsibleSection({
   icon,
   title,
   badge,
+  preview,
   children,
+  defaultOpen = false,
 }: {
   icon: React.ReactNode;
   title: string;
   badge?: React.ReactNode;
+  preview?: React.ReactNode;
   children: React.ReactNode;
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-lg border border-[#EBEBEB] overflow-hidden">
+    <div className={`rounded-lg transition-colors ${open ? "bg-[#FAFAFA]" : ""}`}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-[#FAFAFA] transition-colors cursor-pointer"
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAFAFA] rounded-lg transition-colors cursor-pointer"
       >
-        {icon}
-        <span className="text-xs font-semibold text-[#909090] uppercase tracking-wider flex-1 text-left">
-          {title}
-        </span>
+        <div className="shrink-0">{icon}</div>
+        <div className="flex-1 text-left min-w-0">
+          <span className="text-sm font-semibold text-black">{title}</span>
+          {!open && preview && (
+            <div className="text-xs text-[#909090] mt-0.5 truncate">{preview}</div>
+          )}
+        </div>
         {badge}
-        <ChevronDown className={`h-3.5 w-3.5 text-[#909090] transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 text-[#909090] shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && <div className="px-3 pb-3">{children}</div>}
+      {open && <div className="px-4 pb-4 pt-1">{children}</div>}
     </div>
   );
 }
@@ -631,84 +638,89 @@ export default function CaseDetailPage() {
               </CardHeader>
               <CardContent>
                 {aiInsights ? (
-                  <div className="space-y-3">
-                    {/* Pattern Analysis — always open */}
-                    <div className={`rounded-lg p-3 text-sm ${aiInsights.patternAnalysis.isPattern ? "bg-amber-50 text-amber-800 border border-amber-200" : "bg-[#F5F5F5] text-[#636363]"}`}>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <TrendingUp className="h-3.5 w-3.5 text-[#00653E] shrink-0" />
-                        <span className="text-xs font-semibold uppercase tracking-wider">
+                  <div className="space-y-1">
+                    {/* Pattern Analysis — always visible */}
+                    <div className={`rounded-lg p-4 ${aiInsights.patternAnalysis.isPattern ? "bg-amber-50 border border-amber-200" : "bg-[#F8F8F8]"}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className={`h-4 w-4 shrink-0 ${aiInsights.patternAnalysis.isPattern ? "text-amber-600" : "text-[#00653E]"}`} />
+                        <span className="text-sm font-semibold text-black">
                           {t("aiInsights.patternAnalysis")}
                         </span>
                         {aiInsights.patternAnalysis.isPattern && (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700">
-                            <AlertCircle className="h-3 w-3" />
+                          <Badge className="bg-amber-100 text-amber-700 border-amber-300 border text-xs">
+                            <AlertCircle className="h-3 w-3 me-1" />
                             {t("aiInsights.patternDetected")}
-                          </span>
+                          </Badge>
                         )}
                       </div>
-                      <p className="leading-relaxed">{aiInsights.patternAnalysis.summary}</p>
+                      <p className={`text-sm leading-relaxed ${aiInsights.patternAnalysis.isPattern ? "text-amber-800" : "text-[#636363]"}`}>
+                        {aiInsights.patternAnalysis.summary}
+                      </p>
                     </div>
 
-                    {/* Collapsible sections in 2-col grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Collapsible detail sections — full width, stacked */}
+                    <div className="divide-y divide-[#F0F0F0]">
                       {/* Related Cases */}
                       {aiInsights.relatedCases.length > 0 && (
                         <CollapsibleSection
-                          icon={<FileText className="h-3.5 w-3.5 text-[#00653E]" />}
+                          icon={<FileText className="h-4 w-4 text-blue-500" />}
                           title={t("aiInsights.relatedCases", { count: aiInsights.relatedCases.length })}
-                          badge={<Badge variant="outline" className="bg-[#F5F5F5] text-[#636363] border-[#EBEBEB] text-[10px] px-1.5">{aiInsights.relatedCases.length}</Badge>}
+                          badge={<Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 text-xs">{aiInsights.relatedCases.length}</Badge>}
+                          preview={aiInsights.relatedCases.map((rc) => rc.trackingId).join(", ")}
                         >
-                          <div className="space-y-2 pt-2">
+                          <div className="space-y-2">
                             {aiInsights.relatedCases.map((rc) => (
-                              <div key={rc.trackingId} className="rounded-lg bg-[#F5F5F5] p-2.5">
-                                <span className="text-xs font-mono font-bold text-[#00653E]">{rc.trackingId}</span>
-                                <p className="text-xs text-[#636363] mt-0.5">{rc.relevance}</p>
+                              <div key={rc.trackingId} className="rounded-lg bg-white border border-[#EBEBEB] p-3">
+                                <span className="text-sm font-mono font-bold text-[#00653E]">{rc.trackingId}</span>
+                                <p className="text-sm text-[#636363] mt-1 leading-relaxed">{rc.relevance}</p>
                               </div>
                             ))}
                           </div>
                         </CollapsibleSection>
                       )}
 
-                      {/* Victim Estimate */}
+                      {/* Impact Estimate */}
                       <CollapsibleSection
-                        icon={<Users className="h-3.5 w-3.5 text-[#00653E]" />}
+                        icon={<Users className="h-4 w-4 text-purple-500" />}
                         title={t("aiInsights.victimEstimate")}
-                        badge={<span className="text-sm font-bold text-black">{aiInsights.victimEstimate.count}</span>}
+                        badge={<span className="text-base font-bold text-black">{aiInsights.victimEstimate.count}</span>}
+                        preview={`${aiInsights.victimEstimate.count} estimated — ${aiInsights.victimEstimate.confidence} confidence`}
                       >
-                        <div className="flex items-center gap-3 pt-2">
-                          <span className="text-2xl font-bold text-black">{aiInsights.victimEstimate.count}</span>
-                          <div>
-                            <Badge variant="outline" className={
+                        <div className="flex items-start gap-4">
+                          <div className="text-center">
+                            <span className="text-3xl font-bold text-black block">{aiInsights.victimEstimate.count}</span>
+                            <Badge variant="outline" className={`mt-1 text-xs ${
                               aiInsights.victimEstimate.confidence === "HIGH" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
                               aiInsights.victimEstimate.confidence === "MEDIUM" ? "bg-amber-50 text-amber-700 border-amber-200" :
                               "bg-[#F5F5F5] text-[#909090] border-[#EBEBEB]"
-                            }>
+                            }`}>
                               {aiInsights.victimEstimate.confidence}
                             </Badge>
-                            <p className="text-xs text-[#909090] mt-0.5">{aiInsights.victimEstimate.reasoning}</p>
                           </div>
+                          <p className="text-sm text-[#636363] leading-relaxed flex-1">{aiInsights.victimEstimate.reasoning}</p>
                         </div>
                       </CollapsibleSection>
 
                       {/* Credibility Signals */}
                       <CollapsibleSection
-                        icon={<ShieldCheck className="h-3.5 w-3.5 text-[#00653E]" />}
+                        icon={<ShieldCheck className="h-4 w-4 text-emerald-500" />}
                         title={t("aiInsights.credibility")}
                         badge={
-                          <Badge variant="outline" className={
-                            aiInsights.credibilitySignals.level === "HIGH" ? "bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] px-1.5" :
-                            aiInsights.credibilitySignals.level === "MEDIUM" ? "bg-amber-50 text-amber-700 border-amber-200 text-[10px] px-1.5" :
-                            "bg-red-50 text-red-700 border-red-200 text-[10px] px-1.5"
-                          }>
+                          <Badge variant="outline" className={`text-xs ${
+                            aiInsights.credibilitySignals.level === "HIGH" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                            aiInsights.credibilitySignals.level === "MEDIUM" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                            "bg-red-50 text-red-700 border-red-200"
+                          }`}>
                             {aiInsights.credibilitySignals.level}
                           </Badge>
                         }
+                        preview={`${aiInsights.credibilitySignals.level} credibility — ${aiInsights.credibilitySignals.factors.length} factors`}
                       >
-                        <ul className="space-y-1.5 pt-2">
+                        <ul className="space-y-2">
                           {aiInsights.credibilitySignals.factors.map((factor, i) => (
-                            <li key={i} className="flex items-start gap-2 text-xs text-[#636363]">
-                              <CheckCircle2 className="h-3 w-3 text-[#00653E] shrink-0 mt-0.5" />
-                              {factor}
+                            <li key={i} className="flex items-start gap-2.5 text-sm text-[#636363]">
+                              <CheckCircle2 className="h-4 w-4 text-[#00653E] shrink-0 mt-0.5" />
+                              <span className="leading-relaxed">{factor}</span>
                             </li>
                           ))}
                         </ul>
@@ -716,17 +728,18 @@ export default function CaseDetailPage() {
 
                       {/* Recommended Actions */}
                       <CollapsibleSection
-                        icon={<AlertTriangle className="h-3.5 w-3.5 text-[#00653E]" />}
+                        icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
                         title={t("aiInsights.recommendedActions")}
-                        badge={<Badge variant="outline" className="bg-[#F5F5F5] text-[#636363] border-[#EBEBEB] text-[10px] px-1.5">{aiInsights.recommendedActions.length}</Badge>}
+                        badge={<Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 text-xs">{aiInsights.recommendedActions.length}</Badge>}
+                        preview={aiInsights.recommendedActions[0]}
                       >
-                        <ol className="space-y-1.5 pt-2">
+                        <ol className="space-y-2.5">
                           {aiInsights.recommendedActions.map((action, i) => (
-                            <li key={i} className="flex items-start gap-2 text-xs text-[#636363]">
-                              <span className="shrink-0 h-4 w-4 rounded-full bg-[#00653E] text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
+                            <li key={i} className="flex items-start gap-3 text-sm text-[#636363]">
+                              <span className="shrink-0 h-5 w-5 rounded-full bg-[#00653E] text-white text-xs font-bold flex items-center justify-center mt-0.5">
                                 {i + 1}
                               </span>
-                              {action}
+                              <span className="leading-relaxed">{action}</span>
                             </li>
                           ))}
                         </ol>
@@ -734,9 +747,9 @@ export default function CaseDetailPage() {
                     </div>
                   </div>
                 ) : aiLoading ? (
-                  <div className="flex items-center justify-center py-6 gap-3">
+                  <div className="flex items-center justify-center py-8 gap-3">
                     <Loader2 className="h-5 w-5 animate-spin text-[#00653E]" />
-                    <p className="text-xs text-[#909090]">{t("aiInsights.analyzing")}</p>
+                    <p className="text-sm text-[#909090]">{t("aiInsights.analyzing")}</p>
                   </div>
                 ) : (
                   <p className="text-sm text-[#909090]">{t("aiInsights.description")}</p>
