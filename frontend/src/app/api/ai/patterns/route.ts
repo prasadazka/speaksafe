@@ -169,7 +169,29 @@ export async function POST(req: NextRequest) {
 
     /* Parse JSON — strip code fences if Gemini wraps them */
     const cleaned = raw.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?\s*```$/, "");
-    const insights = JSON.parse(cleaned);
+    let insights: Record<string, unknown>;
+    try {
+      insights = JSON.parse(cleaned);
+    } catch {
+      console.error("[AI Patterns] Invalid JSON from model:", cleaned.slice(0, 200));
+      return NextResponse.json(
+        { error: "AI returned an unparseable response. Please try again." },
+        { status: 502 },
+      );
+    }
+
+    if (
+      !insights ||
+      typeof insights !== "object" ||
+      !("patternAnalysis" in insights) ||
+      !("credibilitySignals" in insights)
+    ) {
+      console.error("[AI Patterns] Unexpected shape:", JSON.stringify(insights).slice(0, 200));
+      return NextResponse.json(
+        { error: "AI returned an unexpected response format. Please try again." },
+        { status: 502 },
+      );
+    }
 
     return NextResponse.json({ insights });
   } catch (err) {
