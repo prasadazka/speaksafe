@@ -26,7 +26,28 @@ from app.db.session import engine
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     setup_logging()
-    structlog.get_logger().info("sawtsafe_starting", environment=settings.ENVIRONMENT)
+    log = structlog.get_logger()
+    log.info("sawtsafe_starting", environment=settings.ENVIRONMENT)
+
+    # ── Fail-fast: validate critical secrets on startup ──
+    if settings.ENVIRONMENT == "production":
+        if settings.SECRET_KEY in ("change-me", "change-me-in-production", ""):
+            raise RuntimeError(
+                "SECRET_KEY must be set to a strong random value in production. "
+                "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+            )
+        if len(settings.SECRET_KEY) < 32:
+            raise RuntimeError("SECRET_KEY must be at least 32 characters in production.")
+
+    # Validate encryption key early — don't wait for the first request to crash
+    from app.core.encryption import _get_key  # noqa: E402
+    try:
+        _get_key()
+        log.info("encryption_key_valid")
+    except RuntimeError as exc:
+        log.critical("encryption_key_invalid", error=str(exc))
+        raise
+
     async with engine.begin() as conn:
         await conn.execute(text("SELECT 1"))
         # Add ip_address column to audit_logs if missing
