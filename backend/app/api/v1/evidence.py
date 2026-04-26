@@ -7,7 +7,7 @@ from google.cloud import storage as gcs
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user
+from app.api.deps import get_client_ip, get_current_user, get_user_agent
 from app.api.v1.ws import WSEvent
 from app.api.v1.ws import manager as ws_manager
 from app.core.config import settings
@@ -101,15 +101,11 @@ async def upload_evidence(
     report.evidence_count += 1
     await db.flush()
 
-    forwarded = request.headers.get("x-forwarded-for")
-    ip = forwarded.split(",")[0].strip() if forwarded else (
-        request.client.host if request.client else None
-    )
     await log_action(
         db, AuditAction.EVIDENCE_UPLOADED, "evidence", str(evidence.id),
         metadata={"report_id": str(report_id), "file_name": evidence.file_name, "size": size},
-        ip_address=ip,
-        user_agent=request.headers.get("user-agent"),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
     await db.refresh(evidence)
@@ -222,15 +218,11 @@ async def delete_evidence(
 
     evidence.is_deleted = True
     report.evidence_count = max(0, report.evidence_count - 1)
-    fwd = request.headers.get("x-forwarded-for")
-    ev_ip = fwd.split(",")[0].strip() if fwd else (
-        request.client.host if request.client else None
-    )
     await log_action(
         db, AuditAction.EVIDENCE_DELETED, "evidence", str(evidence_id),
         actor=user, metadata={"report_id": str(report_id), "file_name": evidence.file_name},
-        ip_address=ev_ip,
-        user_agent=request.headers.get("user-agent"),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
 

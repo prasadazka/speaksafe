@@ -11,7 +11,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user, require_role
+from app.api.deps import get_client_ip, get_current_user, get_user_agent, require_role
 from app.api.v1.ws import WSEvent
 from app.api.v1.ws import manager as ws_manager
 from app.core.config import settings
@@ -44,20 +44,6 @@ from app.schemas.report import (
 )
 from app.services.audit import log_action
 from app.services.retention import purge_expired_reports
-
-
-def _get_client_ip(request: Request) -> str | None:
-    """Extract the real client IP, respecting X-Forwarded-For behind proxies."""
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    if request.client:
-        return request.client.host
-    return None
-
-
-def _get_user_agent(request: Request) -> str | None:
-    return request.headers.get("user-agent")
 
 router = APIRouter(prefix="/api/v1/reports", tags=["Reports"])
 
@@ -125,8 +111,8 @@ async def submit_report(
     await log_action(
         db, AuditAction.REPORT_CREATED, "report", str(report.id),
         metadata={"tracking_id": report.tracking_id, "category": payload.category.value},
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
     await db.refresh(report)
@@ -244,8 +230,8 @@ async def get_report(
         str(report_id),
         actor=user,
         metadata={"tracking_id": report.tracking_id},
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
 
@@ -301,8 +287,8 @@ async def update_status(
         db, AuditAction.REPORT_STATUS_UPDATED, "report", str(report_id),
         actor=user,
         metadata=meta,
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
     await db.refresh(report)
@@ -344,8 +330,8 @@ async def update_severity(
             "old": old_severity, "new": payload.severity.value,
             "before": before, "after": after,
         },
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
     await db.refresh(report)
@@ -380,8 +366,8 @@ async def delete_report(
     await log_action(
         db, AuditAction.REPORT_DELETED, "report", str(report_id), actor=user,
         metadata={"before": before, "after": after},
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
 
@@ -550,8 +536,8 @@ async def export_csv(
         db, AuditAction.REPORT_EXPORTED, "report", "bulk",
         actor=user,
         metadata={"format": "csv", "count": len(rows), **filters},
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
 
@@ -596,8 +582,8 @@ async def export_pdf(
         db, AuditAction.REPORT_EXPORTED, "report", "bulk",
         actor=user,
         metadata={"format": "pdf", "count": len(rows), **filters},
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
 
@@ -755,8 +741,8 @@ async def retention_purge(
     purged = await purge_expired_reports(
         db,
         actor=user,
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     return ApiResponse(
         data={

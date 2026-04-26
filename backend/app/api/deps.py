@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +12,20 @@ from app.db.session import get_db
 from app.models.admin_user import AdminRole, AdminUser
 
 bearer_scheme = HTTPBearer()
+
+
+def get_client_ip(request: Request) -> str | None:
+    """Extract the real client IP, respecting X-Forwarded-For behind proxies."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    if request.client:
+        return request.client.host
+    return None
+
+
+def get_user_agent(request: Request) -> str | None:
+    return request.headers.get("user-agent")
 
 
 async def get_current_user(

@@ -7,7 +7,7 @@ from sqlalchemy import func as sa_func
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user, require_role
+from app.api.deps import get_client_ip, get_current_user, get_user_agent, require_role
 from app.core.rate_limit import RATE_LOGIN, RATE_REGISTER, limiter
 from app.core.security import (
     create_access_token,
@@ -34,19 +34,6 @@ from app.schemas.report import ApiResponse
 from app.services.audit import log_action
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
-
-
-def _get_client_ip(request: Request) -> str | None:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    if request.client:
-        return request.client.host
-    return None
-
-
-def _get_user_agent(request: Request) -> str | None:
-    return request.headers.get("user-agent")
 
 
 def _snapshot_user(user: AdminUser) -> dict:
@@ -83,8 +70,8 @@ async def register(
     await log_action(
         db, AuditAction.ADMIN_REGISTERED, "admin_user", str(user.id),
         metadata={"email": payload.email, "role": payload.role.value},
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
     await db.refresh(user)
@@ -126,8 +113,8 @@ async def login(
     user.last_active_at = now
     await log_action(
         db, AuditAction.ADMIN_LOGIN, "admin_user", str(user.id), actor=user,
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
 
@@ -167,8 +154,8 @@ async def change_password(
         db, AuditAction.ADMIN_PASSWORD_CHANGED, "admin_user", str(user.id),
         actor=user,
         metadata={"email": user.email},
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
 
@@ -292,8 +279,8 @@ async def update_user_role(
             "email": target.email, "old_role": old_role, "new_role": payload.role.value,
             "before": before, "after": after,
         },
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
 
@@ -330,8 +317,8 @@ async def update_user_active(
             "email": target.email, "is_active": payload.is_active,
             "before": before, "after": after,
         },
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
 
@@ -360,8 +347,8 @@ async def delete_user(
         db, AuditAction.ADMIN_DELETED, "admin_user", str(user_id),
         actor=admin,
         metadata={"email": target.email, "role": target.role.value, "before": before},
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.delete(target)
     await db.commit()
@@ -388,8 +375,8 @@ async def reset_user_password(
         db, AuditAction.ADMIN_PASSWORD_RESET, "admin_user", str(user_id),
         actor=admin,
         metadata={"email": target.email},
-        ip_address=_get_client_ip(request),
-        user_agent=_get_user_agent(request),
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     await db.commit()
 
