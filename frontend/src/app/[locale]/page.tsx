@@ -5,10 +5,7 @@ import {
   Fingerprint, ServerCrash, Globe, ShieldCheck, Zap, Users,
   MessageSquareWarning, Timer,
   Database, KeyRound, Network, Scale,
-  Sparkles, GitCompareArrows, HeartPulse,
 } from "lucide-react";
-import { AiSeverityDemo } from "@/components/ai-severity-demo";
-import { AiFormatDemo } from "@/components/ai-format-demo";
 import {
   FadeUp,
   FadeIn,
@@ -44,8 +41,12 @@ const complianceBadges = [
 const architectureIcons = [Network, Database, KeyRound, Scale];
 const orgIcons = [Users, Zap, FileText, Scale, Globe, ShieldCheck];
 const complianceBottomIcons = [Timer, CheckCircle2, Database];
-const aiLiveExtraIcons = [GitCompareArrows, HeartPulse];
-const aiLiveExtraKeys = ["patterns", "sentiment"] as const;
+const aiCards = [
+  { key: "severity", image: "/images/ai/ai-card-1.png" },
+  { key: "format", image: "/images/ai/ai-card-2.png" },
+  { key: "patterns", image: "/images/ai/ai-card-3.jpg" },
+  { key: "sentiment", image: "/images/ai/ai-card-4.png" },
+] as const;
 
 /* ── Page ── */
 
@@ -526,98 +527,49 @@ export default async function HomePage({
 
         {/* ── AI Features ── */}
         <section id="ai" className="bg-[#01151C] relative overflow-hidden">
-          {/* Background glow orbs */}
-          <div className="absolute -top-20 right-[20%] w-[400px] h-[400px] rounded-full bg-[#00653E]/[0.04] blur-[100px] pointer-events-none" />
-          <div className="absolute -bottom-20 left-[10%] w-[300px] h-[300px] rounded-full bg-[#00653E]/[0.03] blur-[80px] pointer-events-none" />
-
           <div className="relative max-w-[1660px] mx-auto px-6 lg:px-[130px] py-20 md:py-28">
             {/* Header */}
             <FadeUp className="text-center mb-16">
-              <div className="inline-flex items-center border border-[#00653E] rounded-full px-5 py-1 mb-6">
-                <span className="text-[#00653E] font-semibold text-base font-[family-name:var(--font-dm)]">
+              <div className="inline-flex items-center border border-white/40 rounded-full px-5 py-1 mb-6">
+                <span className="text-[#C8C8C8] font-semibold text-base font-[family-name:var(--font-dm)]">
                   {t("ai.pill")}
                 </span>
               </div>
-              <h2 className="text-3xl md:text-4xl lg:text-[56px] font-bold leading-tight text-white">
+              <h2 className="text-3xl md:text-4xl lg:text-[56px] font-semibold leading-tight text-white">
                 {t("ai.heading")}
               </h2>
-              <p className="mt-6 text-lg md:text-xl text-white/50 max-w-[700px] mx-auto leading-relaxed">
+              <p className="mt-6 text-lg md:text-[28px] md:leading-[34px] text-[#909090] max-w-[868px] mx-auto">
                 {t("ai.subtitle")}
               </p>
             </FadeUp>
 
-            {/* Hero cards — 2 live features */}
-            <StaggerContainer stagger={0.2} className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-6 lg:mb-8">
-              {/* Severity Scoring */}
-              <StaggerItem>
-                <div className="bg-[#0A2A1E] rounded-2xl border border-white/[0.06] overflow-hidden h-full">
-                  <AiSeverityDemo />
-                  <div className="p-6 pt-4 border-t border-white/[0.04]">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="h-10 w-10 rounded-xl bg-[#00653E]/10 flex items-center justify-center shrink-0">
-                        <Sparkles className="h-5 w-5 text-[#00653E]" />
-                      </div>
-                      <span className="rounded-full bg-[#00653E]/20 text-[#00653E] px-3 py-0.5 text-xs font-semibold">
-                        {t("ai.liveBadge")}
-                      </span>
+            {/* 2×2 Card Grid */}
+            <StaggerContainer stagger={0.15} className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+              {aiCards.map(({ key, image }) => (
+                <StaggerItem key={key}>
+                  <div className="bg-white rounded-[20px] shadow-[0_10px_20px_rgba(0,0,0,0.1)] overflow-hidden h-full flex flex-col">
+                    {/* Image area with green-to-white gradient */}
+                    <div className="relative w-full aspect-[2/1.1] flex items-center justify-center p-6 bg-gradient-to-b from-[#E5FFF5] to-white">
+                      <Image
+                        src={image}
+                        alt={key}
+                        fill
+                        className="object-contain p-4"
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                      />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">{t("ai.severity.title")}</h3>
-                    <p className="text-sm text-white/50 leading-relaxed">{t("ai.severity.desc")}</p>
-
-                  </div>
-                </div>
-              </StaggerItem>
-
-              {/* Report Enhancement */}
-              <StaggerItem>
-                <div className="bg-[#0A2A1E] rounded-2xl border border-white/[0.06] overflow-hidden h-full">
-                  <AiFormatDemo />
-                  <div className="p-6 pt-4 border-t border-white/[0.04]">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="h-10 w-10 rounded-xl bg-[#00653E]/10 flex items-center justify-center shrink-0">
-                        <FileText className="h-5 w-5 text-[#00653E]" />
-                      </div>
-                      <span className="rounded-full bg-[#00653E]/20 text-[#00653E] px-3 py-0.5 text-xs font-semibold">
-                        {t("ai.liveBadge")}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">{t("ai.format.title")}</h3>
-                    <p className="text-sm text-white/50 leading-relaxed">{t("ai.format.desc")}</p>
-
-                  </div>
-                </div>
-              </StaggerItem>
-            </StaggerContainer>
-
-            {/* Additional live AI features */}
-            <StaggerContainer stagger={0.12} className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-              {aiLiveExtraKeys.map((key, i) => {
-                const Icon = aiLiveExtraIcons[i];
-                return (
-                  <StaggerItem key={key}>
-                    <div className="bg-[#0A2A1E] rounded-2xl border border-white/[0.06] p-7 h-full relative overflow-hidden">
-                      {/* Ambient glow */}
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#00653E]/5 rounded-full blur-2xl pointer-events-none" />
-
-                      <div className="flex items-center gap-3 mb-5">
-                        <div className="h-11 w-11 rounded-xl bg-[#00653E]/10 flex items-center justify-center">
-                          <Icon className="h-5 w-5 text-[#00653E]" />
-                        </div>
-                        <span className="rounded-full bg-[#00653E]/20 text-[#00653E] px-3 py-0.5 text-xs font-semibold">
-                          {t("ai.liveBadge")}
-                        </span>
-                      </div>
-
-                      <h3 className="text-lg font-bold text-white mb-2">
+                    {/* Text area */}
+                    <div className="px-8 pb-8 pt-4 flex-1">
+                      <h3 className="text-2xl lg:text-[28px] xl:text-[36px] font-bold text-black leading-tight mb-3">
                         {t(`ai.${key}.title`)}
                       </h3>
-                      <p className="text-sm text-white/50 leading-relaxed">
+                      <p className="text-base lg:text-lg xl:text-[20px] text-black/70 leading-relaxed">
                         {t(`ai.${key}.desc`)}
                       </p>
                     </div>
-                  </StaggerItem>
-                );
-              })}
+                  </div>
+                </StaggerItem>
+              ))}
             </StaggerContainer>
 
           </div>
