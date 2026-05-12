@@ -1,0 +1,133 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
+import { adminLogin, getMe, type AdminProfile, type AdminRole } from "@/lib/admin-api";
+
+const TOKEN_KEY = "speaksafe_admin_token";
+
+export interface MFAState {
+  required: boolean;
+  email: string;
+  password: string;
+}
+
+interface AuthContextValue {
+  user: AdminProfile | null;
+  token: string | null;
+  isLoading: boolean;
+  mfaState: MFAState | null;
+  login: (email: string, password: string, totpCode?: string) => Promise<void>;
+  clearMfa: () => void;
+  logout: () => void;
+  hasRole: (...roles: AdminRole[]) => boolean;
+  refreshUser: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<AdminProfile | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [mfaState, setMfaState] = useState<MFAState | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const stored = localStorage.getItem(TOKEN_KEY);
+    if (!stored) {
+      setIsLoading(false);
+      return;
+    }
+    getMe(stored)
+      .then((res) => {
+        if (res.success && res.data) {
+          setToken(stored);
+          setUser(res.data as AdminProfile);
+        } else {
+          localStorage.removeItem(TOKEN_KEY);
+        }
+      })
+      .catch(() => localStorage.removeItem(TOKEN_KEY))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const login = useCallback(
+    async (email: string, password: string, totpCode?: string) => {
+      const res = await adminLogin(email, password, totpCode);
+      if (!res.success || !res.data) {
+        throw new Error(res.error ?? "Login failed");
+      }
+
+      const data = res.data as Record<string, unknown>;
+      if (data.mfa_required) {
+        setMfaState({ required: true, email, password });
+        return;
+      }
+
+      setMfaState(null);
+      const loginData = data as { access_token: string; user?: AdminProfile };
+      localStorage.setItem(TOKEN_KEY, loginData.access_token);
+      setToken(loginData.access_token);
+
+      if (loginData.user) {
+        setUser(loginData.user);
+      } else {
+        const profile = await getMe(loginData.access_token);
+        if (profile.success && profile.data) {
+          setUser(profile.data as AdminProfile);
+        }
+      }
+      router.push("/admin/dashboard");
+    },
+    [router],
+  );
+
+  const clearMfa = useCallback(() => setMfaState(null), []);
+
+  const refreshUser = useCallback(async () => {
+    const t = token ?? localStorage.getItem(TOKEN_KEY);
+    if (!t) return;
+    const res = await getMe(t);
+    if (res.success && res.data) setUser(res.data as AdminProfile);
+  }, [token]);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY);
+    setToken(null);
+    setUser(null);
+    setMfaState(null);
+    router.push("/admin/login");
+  }, [router]);
+
+  useEffect(() => {
+    const handler = () => logout();
+    window.addEventListener("speaksafe:session-expired", handler);
+    return () => window.removeEventListener("speaksafe:session-expired", handler);
+  }, [logout]);
+
+  const hasRole = useCallback(
+    (...roles: AdminRole[]) => (user ? roles.includes(user.role) : false),
+    [user],
+  );
+
+  const value = useMemo<AuthContextValue>(
+    () => ({ user, token, isLoading, mfaState, login, clearMfa, logout, hasRole, refreshUser }),
+    [user, token, isLoading, mfaState, login, clearMfa, logout, hasRole, refreshUser],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
+}
